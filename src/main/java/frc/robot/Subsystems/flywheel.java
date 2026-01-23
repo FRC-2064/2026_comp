@@ -1,38 +1,26 @@
-import static edu.wpi.first.units.Units.Amps;
-import static edu.wpi.first.units.Units.Degrees;
-import static edu.wpi.first.units.Units.DegreesPerSecond;
+package frc.robot.subsystems;
+
 import static edu.wpi.first.units.Units.DegreesPerSecondPerSecond;
-import static edu.wpi.first.units.Units.Feet;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Pounds;
 import static edu.wpi.first.units.Units.RPM;
-import static edu.wpi.first.units.Units.Second;
 import static edu.wpi.first.units.Units.Seconds;
-import static edu.wpi.first.units.Units.Volts;
+import static edu.wpi.first.units.Units.Amps;
+import static edu.wpi.first.units.Units.DegreesPerSecond;
 
-import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.revrobotics.spark.SparkMax;
 
-import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.system.plant.DCMotor;
-import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
-import edu.wpi.first.wpilibj.motorcontrol.Talon;
-import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import yams.mechanisms.SmartMechanism;
-import yams.mechanisms.config.ArmConfig;
 import yams.mechanisms.config.FlyWheelConfig;
-import yams.mechanisms.positional.Arm;
 import yams.mechanisms.velocity.FlyWheel;
 import yams.motorcontrollers.SmartMotorController;
 import yams.motorcontrollers.SmartMotorControllerConfig;
 import yams.motorcontrollers.SmartMotorControllerConfig.ControlMode;
 import yams.motorcontrollers.SmartMotorControllerConfig.MotorMode;
 import yams.motorcontrollers.SmartMotorControllerConfig.TelemetryVerbosity;
-import yams.motorcontrollers.local.SparkWrapper;
 import yams.motorcontrollers.remote.TalonFXWrapper;
 import yams.gearing.GearBox;
 import yams.gearing.MechanismGearing;
@@ -63,25 +51,32 @@ public class flywheel extends SubsystemBase
 
 
     private FlyWheel flywheel = new FlyWheel(flywheelConfig);
+    private AngularVelocity targetSpeed = RPM.of(0);
 
     public flywheel()
     {
 
     }
 
+    public boolean isUpToSpeed()
+    {
+        return flywheel.getSpeed().isNear(targetSpeed, RPM.of(10));
+    }
+
+    public void setVelocity(AngularVelocity speed)
+    {
+        targetSpeed = speed;
+        flywheel.setSpeed(speed);
+    }
+
+    public AngularVelocity getTargetSpeed()
+    {
+        return targetSpeed;
+    }
+
     public AngularVelocity getVelocity()
     {
         return flywheel.getSpeed();
-    }
-
-    public Command setVelocity(AngularVelocity speed)
-    {
-        return flywheel.setSpeed(speed);
-    }
-
-    public Command set(double dutyCycle)
-    {
-        return flywheel.set(dutyCycle);
     }
 
     @Override
@@ -91,7 +86,7 @@ public class flywheel extends SubsystemBase
     }
 
     @Override
-    public void simulatePeriodic()
+    public void simulationPeriodic()
     {
         flywheel.simIterate();
     }
