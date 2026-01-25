@@ -1,4 +1,4 @@
-package frc.robot.Subsystems.ShooterSubsystem;
+package frc.robot.subsystems.shooterSubsystem;
 
 import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Degrees;
@@ -7,7 +7,6 @@ import static edu.wpi.first.units.Units.DegreesPerSecondPerSecond;
 import static edu.wpi.first.units.Units.Seconds;
 
 import com.ctre.phoenix6.hardware.TalonFX;
-
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.measure.Angle;
@@ -24,10 +23,19 @@ import yams.motorcontrollers.SmartMotorControllerConfig.TelemetryVerbosity;
 import yams.motorcontrollers.remote.TalonFXWrapper;
 
 public class Hood extends SubsystemBase {
-    TalonFX hoodMotor = new TalonFX(1);//can change id
-    SmartMotorControllerConfig motorConfig = new SmartMotorControllerConfig(this)
+
+    TalonFX hoodMotor = new TalonFX(1); //can change id
+    SmartMotorControllerConfig motorConfig = new SmartMotorControllerConfig(
+        this
+    )
         .withControlMode(ControlMode.CLOSED_LOOP)
-        .withClosedLoopController(4, 0, 0, DegreesPerSecond.of(10), DegreesPerSecondPerSecond.of(5))//PID and degreesPerSecond subject to change
+        .withClosedLoopController(
+            4,
+            0,
+            0,
+            DegreesPerSecond.of(10),
+            DegreesPerSecondPerSecond.of(5)
+        ) //PID and degreesPerSecond subject to change
         .withFeedforward(new ArmFeedforward(0, 0, 0))
         //gear ratios subject to change
         .withGearing(new MechanismGearing(GearBox.fromReductionStages(3, 4)))
@@ -37,26 +45,33 @@ public class Hood extends SubsystemBase {
         .withStatorCurrentLimit(Amps.of(40))
         .withClosedLoopRampRate(Seconds.of(0.25))
         .withOpenLoopRampRate(Seconds.of(0.25));
-    SmartMotorController motor = new TalonFXWrapper(hoodMotor, DCMotor.getKrakenX60(1), motorConfig);//change to X44
-    
+    SmartMotorController motor = new TalonFXWrapper(
+        hoodMotor,
+        DCMotor.getKrakenX60(1),
+        motorConfig
+    ); //change to X44
+
     ArmConfig hoodConfig = new ArmConfig(motor)
-        .withStartingPosition(Degrees.of(0))//can be changed to reflect design
+        .withStartingPosition(Degrees.of(0)) //can be changed to reflect design
         .withHardLimit(Degrees.of(-30), Degrees.of(40))
         .withSoftLimits(Degrees.of(-30), Degrees.of(40))
         .withTelemetry("Hood", TelemetryVerbosity.HIGH);
-    
+
     private Arm hood = new Arm(hoodConfig);
     private Angle targetAngle = Degrees.of(0);
 
-    public Hood(){}
-    public Angle getCurrentAngle(){
+    public Hood() {}
+
+    public Angle getCurrentAngle() {
         return hood.getAngle();
     }
-    public void setTargetAngle(Angle angle){
+
+    public void setTargetAngle(Angle angle) {
         hood.setAngle(angle);
         targetAngle = angle;
     }
-    public boolean atPosition(){
+
+    public boolean atPosition() {
         return targetAngle.isNear(hood.getAngle(), Degrees.of(1));
     }
 }
