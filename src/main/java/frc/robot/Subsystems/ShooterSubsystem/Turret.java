@@ -1,4 +1,4 @@
-package frc.robot.subsystems;
+package frc.robot.Subsystems.ShooterSubsystem;
 
 import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Degrees;
