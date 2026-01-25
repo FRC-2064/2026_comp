@@ -1,29 +1,31 @@
-package frc.robot.subsystems;
+package frc.robot.subsystems.collectionSubsystem;
+
+import static edu.wpi.first.units.Units.Amps;
 
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.subsystems.collectionSubsystem.CollectionConstants.IndexerConstants;
 
 public class Indexer extends SubsystemBase {
-
-    private TalonFX indexerMotor = new TalonFX(1);
-    private TalonFXConfiguration config = new TalonFXConfiguration();
+    private final TalonFX indexerMotor = new TalonFX(IndexerConstants.MOTOR_ID);
 
     public Indexer() {
-        config.CurrentLimits.StatorCurrentLimit = 40;
+        TalonFXConfiguration config = new TalonFXConfiguration();
+        config.CurrentLimits.StatorCurrentLimit = IndexerConstants.STATOR_LIMIT.in(Amps);
         config.MotorOutput.NeutralMode = NeutralModeValue.Coast;
         config.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
         indexerMotor.getConfigurator().apply(config);
     }
 
     public void feed() {
-        indexerMotor.set(0.9);
+        indexerMotor.set(IndexerConstants.FEED_SPEED);
     }
 
     public void outtake() {
-        indexerMotor.set(-0.9);
+        indexerMotor.set(IndexerConstants.OUTTAKE_SPEED);
     }
 
     public void stop() {
