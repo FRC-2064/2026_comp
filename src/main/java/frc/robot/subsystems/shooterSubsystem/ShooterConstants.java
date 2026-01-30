@@ -3,12 +3,16 @@ package frc.robot.subsystems.shooterSubsystem;
 import static edu.wpi.first.units.Units.*;
 
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.measure.*;
 import yams.gearing.GearBox;
 import yams.gearing.MechanismGearing;
 
 public class ShooterConstants {
+
+    public static final Translation3d ROBOT_CENTER_TO_SHOOTER =
+        new Translation3d(Inches.of(0), Inches.of(0), Inches.of(0));
 
     public static class FlyWheelConstants {
         public static final int LEADER_ID = 25;
