@@ -1,9 +1,15 @@
 package frc.robot.subsystems.shooterSubsystem;
 
+import static edu.wpi.first.units.Units.Degrees;
+
 import com.ctre.phoenix6.hardware.TalonFX;
+
+import edu.wpi.first.units.AngleUnit;
+import edu.wpi.first.units.Unit;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.shooterSubsystem.ShooterConstants.HoodConstants;
+import frc.robot.utils.LianaHelpers;
 import yams.mechanisms.config.PivotConfig;
 import yams.mechanisms.positional.Pivot;
 import yams.motorcontrollers.SmartMotorController;
@@ -59,8 +65,9 @@ public class Hood extends SubsystemBase {
     }
 
     public void setTargetAngle(Angle angle) {
-        this.targetAngle = angle;
-        hood.setAngle(angle);
+        var adjustedAngle = Degrees.of(angle.in(Degrees) + getAdjustment().in(Degrees));
+        this.targetAngle = adjustedAngle;
+        hood.setAngle(adjustedAngle);
     }
 
     public Angle getTargetAngle() {
@@ -84,4 +91,8 @@ public class Hood extends SubsystemBase {
     public void simulationPeriodic() {
         hood.simIterate();
     }
+
+    private Angle getAdjustment(){
+        return Degrees.of(LianaHelpers.getHoodAngleAdjustment());
+    } 
 }

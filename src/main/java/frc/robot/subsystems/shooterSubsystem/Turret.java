@@ -6,6 +6,7 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.shooterSubsystem.ShooterConstants.TurretConstants;
+import frc.robot.utils.LianaHelpers;
 import frc.robot.utils.ShooterCalc;
 import java.util.function.Supplier;
 import yams.mechanisms.config.PivotConfig;
@@ -65,8 +66,9 @@ public class Turret extends SubsystemBase {
     public Turret() {}
 
     public void setTargetAngle(Angle angle) {
-        targetAngle = angle;
-        turret.setAngle(angle);
+        var adjustedAngle = Degrees.of(angle.in(Degrees) + getAdjustment().in(Degrees));
+        targetAngle = adjustedAngle;
+        turret.setAngle(adjustedAngle);
     }
 
     public Angle getTargetAngle() {
@@ -100,5 +102,9 @@ public class Turret extends SubsystemBase {
                 setTargetAngle(aimSupplier.get());
             }).withName("TurretAutoAim")
         );
+    }
+
+    private Angle getAdjustment(){
+        return Degrees.of(LianaHelpers.getTurretAngleAdjustment());
     }
 }
