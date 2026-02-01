@@ -14,7 +14,7 @@ public class Shooter extends SubsystemBase {
     private final Hood hood;
     private final FlywheelSubsystem flywheel;
     
-    public Shooter(Hood hood, Turret turret, FlywheelSubsystem flywheel){
+    public Shooter(Hood hood, FlywheelSubsystem flywheel){
         this.hood = hood;
         this.flywheel = flywheel;
     }
