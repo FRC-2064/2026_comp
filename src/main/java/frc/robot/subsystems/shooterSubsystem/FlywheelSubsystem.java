@@ -7,6 +7,7 @@ import edu.wpi.first.math.Pair;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.shooterSubsystem.ShooterConstants.FlyWheelConstants;
+import frc.robot.utils.LianaHelpers;
 import yams.mechanisms.config.FlyWheelConfig;
 import yams.mechanisms.velocity.FlyWheel;
 import yams.motorcontrollers.SmartMotorController;
@@ -68,8 +69,9 @@ public class FlywheelSubsystem extends SubsystemBase {
     }
 
     public void setVelocity(AngularVelocity speed) {
-        targetSpeed = speed;
-        flywheel.setSpeed(speed);
+        var adjustedSpeed = RPM.of(speed.in(RPM) + getAjustment().in(RPM));
+        targetSpeed = adjustedSpeed;
+        flywheel.setSpeed(adjustedSpeed);
     }
 
     public AngularVelocity getTargetSpeed() {
@@ -88,5 +90,9 @@ public class FlywheelSubsystem extends SubsystemBase {
     @Override
     public void simulationPeriodic() {
         flywheel.simIterate();
+    }
+
+    private AngularVelocity getAjustment(){
+        return RPM.of(LianaHelpers.getFlywheelAdjustment());
     }
 }
