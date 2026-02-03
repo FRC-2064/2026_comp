@@ -1,15 +1,21 @@
 package frc.robot.subsystems.shooterSubsystem;
 
 import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.Inches;
 
 import com.ctre.phoenix6.hardware.TalonFX;
+
+import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.shooterSubsystem.ShooterConstants.TurretConstants;
-import frc.robot.utils.LianaHelpers;
-import frc.robot.utils.ShooterCalc;
-import java.util.function.Supplier;
+import yams.mechanisms.config.MechanismPositionConfig;
 import yams.mechanisms.config.PivotConfig;
+import yams.mechanisms.config.MechanismPositionConfig.Plane;
 import yams.mechanisms.positional.Pivot;
 import yams.motorcontrollers.SmartMotorController;
 import yams.motorcontrollers.SmartMotorControllerConfig;
@@ -32,9 +38,9 @@ public class Turret extends SubsystemBase {
             )
             .withFeedforward(TurretConstants.FEEDFORWARD)
             .withSimClosedLoopController(
-                TurretConstants.kP,
-                TurretConstants.kI,
-                TurretConstants.kD,
+                15,
+                0,
+                2,
                 TurretConstants.MAX_VEL,
                 TurretConstants.MAX_ACCEL
             )
@@ -55,20 +61,26 @@ public class Turret extends SubsystemBase {
     public PivotConfig turretConfig = new PivotConfig(motor)
         .withStartingPosition(TurretConstants.STARTING_POS)
         .withHardLimit(TurretConstants.MIN_ANGLE, TurretConstants.MAX_ANGLE)
-        .withSoftLimits(TurretConstants.MIN_ANGLE, TurretConstants.MAX_ANGLE)
+        .withSoftLimits(Degrees.of(5), Degrees.of(350))
         .withTelemetry("Turret", TelemetryVerbosity.HIGH)
-        .withMOI(TurretConstants.LENGTH, TurretConstants.WEIGHT);
+        .withMOI(TurretConstants.LENGTH, TurretConstants.WEIGHT)
+        .withMechanismPositionConfig(
+            new MechanismPositionConfig()
+            .withMaxRobotHeight(Inches.of(22))
+            .withMaxRobotLength(Inches.of(27))
+            .withMovementPlane(Plane.XY)
+        );
 
     private final Pivot turret = new Pivot(turretConfig);
 
     private Angle targetAngle = Degrees.of(0);
 
-    public Turret() {}
+    public Turret() {
+        setDefaultCommand(turret.setAngle(() -> this.targetAngle));
+    }
 
     public void setTargetAngle(Angle angle) {
-        var adjustedAngle = Degrees.of(angle.in(Degrees) + getAdjustment().in(Degrees));
-        targetAngle = adjustedAngle;
-        turret.setAngle(adjustedAngle);
+        this.targetAngle = angle;
     }
 
     public Angle getTargetAngle() {
@@ -80,7 +92,7 @@ public class Turret extends SubsystemBase {
     }
 
     public boolean atPosition() {
-        return targetAngle.isNear(turret.getAngle(), TurretConstants.TOLERANCE);
+        return turret.isNear(targetAngle, TurretConstants.TOLERANCE).getAsBoolean();
     }
 
     @Override
@@ -90,21 +102,6 @@ public class Turret extends SubsystemBase {
 
     @Override
     public void simulationPeriodic() {
-        turretMotor.getSimState().setSupplyVoltage(12.0);
         turret.simIterate();
-    }
-
-    public void setDefaultAimCommand(ShooterCalc shooterCalc) {
-        Supplier<Angle> aimSupplier = shooterCalc.getTurretAngleSupplier();
-
-        setDefaultCommand(
-            this.run(() -> {
-                setTargetAngle(aimSupplier.get());
-            }).withName("TurretAutoAim")
-        );
-    }
-
-    private Angle getAdjustment(){
-        return Degrees.of(LianaHelpers.getTurretAngleAdjustment());
     }
 }

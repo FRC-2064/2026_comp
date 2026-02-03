@@ -51,16 +51,18 @@ public class Intake extends SubsystemBase {
 
     private final TalonFX rollerMotor = new TalonFX(IntakeConstants.ROLLER_ID);
 
-    public enum DesiredState {
-        INTAKE, STOWED, OUTTAKE
+    public enum IntakeState {
+        INTAKE, 
+        STOWED, 
+        OUTTAKE
     }
 
-    private DesiredState desiredState = DesiredState.STOWED;
+    private IntakeState desiredState = IntakeState.STOWED;
 
     public Intake() {
     }
 
-    public void setDesiredState(DesiredState newState) {
+    public void setDesiredState(IntakeState newState) {
         if (this.desiredState == newState) {
             return;
         }
@@ -83,7 +85,7 @@ public class Intake extends SubsystemBase {
         }
     }
 
-    public DesiredState getDesiredState() {
+    public IntakeState getDesiredState() {
         return desiredState;
     }
 

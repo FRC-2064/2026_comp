@@ -15,8 +15,8 @@ public class ShooterConstants {
         new Translation3d(Inches.of(0), Inches.of(0), Inches.of(0));
 
     public static class FlyWheelConstants {
-        public static final int LEADER_ID = 25;
-        public static final int FOLLOWER_ID = 26;
+        public static final int LEADER_ID = 28;
+        public static final int FOLLOWER_ID = 29;
 
         public static final DCMotor MOTORS = DCMotor.getKrakenX60Foc(2);
         public static final Distance WHEEL_DIAMETER = Inches.of(4);
@@ -43,7 +43,7 @@ public class ShooterConstants {
     }
 
     public static class HoodConstants {
-        public static final int MOTOR_ID = 27;
+        public static final int MOTOR_ID = 31;
         public static final DCMotor MOTOR_TYPE = DCMotor.getKrakenX44(1);
 
         public static final Distance MOI_LENGTH = Inches.of(6);
@@ -72,15 +72,15 @@ public class ShooterConstants {
     }
 
     public static class TurretConstants {
-        public static final int MOTOR_ID = 28;
+        public static final int MOTOR_ID = 30;
         public static final DCMotor MOTOR_TYPE = DCMotor.getKrakenX44(1);
 
         public static final Distance LENGTH = Meters.of(0.25);
         public static final Mass WEIGHT = Pounds.of(10);
         public static final MechanismGearing GEARING = new MechanismGearing(GearBox.fromReductionStages(100));
-        public static final Angle STARTING_POS = Degrees.of(0);
-        public static final Angle MIN_ANGLE = Degrees.of(-180);
-        public static final Angle MAX_ANGLE = Degrees.of(180);
+        public static final Angle STARTING_POS = Degrees.of(5);
+        public static final Angle MIN_ANGLE = Degrees.of(0);
+        public static final Angle MAX_ANGLE = Degrees.of(355);
         public static final Angle TOLERANCE = Degrees.of(2.0);
 
         public static final double kP = 50.0;
