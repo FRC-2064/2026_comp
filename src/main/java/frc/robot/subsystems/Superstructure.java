@@ -1,5 +1,10 @@
 package frc.robot.subsystems;
 
+import static edu.wpi.first.units.Units.Milliseconds;
+import static edu.wpi.first.units.Units.Seconds;
+
+import edu.wpi.first.units.measure.Time;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.collectionSubsystem.Indexer;
 import frc.robot.subsystems.collectionSubsystem.Intake;
@@ -44,6 +49,9 @@ public class Superstructure extends SubsystemBase {
 
     private final ShooterCalc shooterCalc;
 
+    private Time readyToShootTimer = Milliseconds.of(0);
+    private boolean wasReadyLastCycle = false;
+
     public Superstructure(
         Intake intake,
         Indexer indexer,
@@ -81,27 +89,7 @@ public class Superstructure extends SubsystemBase {
 
     @Override
     public void periodic() {
-        switch (desiredState) {
-            case INTAKE:
-                currentState = State.INTAKING;
-                break;
-            case OUTTAKE:
-                currentState = State.OUTTAKING;
-                break;
-            case SHOOT:
-                currentState = (isReadyToShoot())
-                    ? State.SHOOTING_FEED
-                    : State.SHOOTING_SPINUP;
-                break;
-            case SNOWBLOW:
-                currentState = (isReadyToShoot())
-                    ? State.SNOWBLOW_FEED
-                    : State.SNOWBLOW_SPINUP;
-                break;
-            default:
-                currentState = State.STOWED;
-                break;
-        }
+        currentState = determineCurrentState();
 
         var solution = shooterCalc.getSelectedSolution();
         turret.setTargetAngle(solution.turretAngle());
@@ -125,6 +113,27 @@ public class Superstructure extends SubsystemBase {
                 snowblow(solution);
                 break;
         }
+
+        updateTelemetry();
+    }
+
+    public boolean isReadyToFire() {
+        return isReadyToShoot();
+    }
+
+    public boolean isFeeding() {
+        return (
+            currentState == State.SHOOTING_FEED ||
+            currentState == State.SNOWBLOW_FEED
+        );
+    }
+
+    public boolean isIntaking() {
+        return currentState == State.INTAKING;
+    }
+
+    public ShooterSolution getCurrentSolution() {
+        return shooterCalc.getSelectedSolution();
     }
 
     private void stow() {
@@ -173,9 +182,70 @@ public class Superstructure extends SubsystemBase {
         }
     }
 
+    private State determineCurrentState() {
+        switch (desiredState) {
+            case INTAKE:
+                return State.INTAKING;
+            case OUTTAKE:
+                return State.OUTTAKING;
+            case SHOOT:
+                return isReadyToShoot()
+                    ? State.SHOOTING_FEED
+                    : State.SHOOTING_SPINUP;
+            case SNOWBLOW:
+                return isReadyToShoot()
+                    ? State.SNOWBLOW_FEED
+                    : State.SNOWBLOW_SPINUP;
+            default:
+                return State.STOWED;
+        }
+    }
+
     private boolean isReadyToShoot() {
-        return (
-            flywheel.isUpToSpeed() && hood.atPosition() && turret.atPosition()
+        var isReady =
+            flywheel.isUpToSpeed() && hood.atPosition() && turret.atPosition();
+        if (isReady && !wasReadyLastCycle) {
+            readyToShootTimer = Milliseconds.of(0);
+        } else if (isReady && !wasReadyLastCycle) {
+            readyToShootTimer.plus(Milliseconds.of(20));
+        } else {
+            readyToShootTimer = Milliseconds.zero();
+        }
+
+        wasReadyLastCycle = isReady;
+        return readyToShootTimer.gte(
+            SuperstructureConstants.READY_TO_SHOOT_DEBOUNCE_TIME
+        );
+    }
+
+    private void updateTelemetry() {
+        SmartDashboard.putString(
+            "Superstructure/DesiredState",
+            desiredState.name()
+        );
+        SmartDashboard.putString(
+            "Superstructure/CurrentState",
+            currentState.name()
+        );
+        SmartDashboard.putBoolean(
+            "Superstructure/ReadyToShoot",
+            isReadyToShoot()
+        );
+        SmartDashboard.putNumber(
+            "Superstructure/ReadyTimer",
+            readyToShootTimer.in(Seconds)
+        );
+        SmartDashboard.putBoolean(
+            "Superstructure/FlywheelReady",
+            flywheel.isUpToSpeed()
+        );
+        SmartDashboard.putBoolean(
+            "Superstructure/HoodReady",
+            hood.atPosition()
+        );
+        SmartDashboard.putBoolean(
+            "Superstructure/TurretReady",
+            turret.atPosition()
         );
     }
 }
