@@ -13,10 +13,12 @@ import org.photonvision.simulation.VisionSystemSim;
 public class Vision extends SubsystemBase {
 
     private final List<VisionCamera> cameras;
+    private final CommandSwerveDrivetrain drive;
     private VisionSystemSim visionSim;
 
     public Vision(CommandSwerveDrivetrain drive) {
         this.cameras = new ArrayList<>();
+        this.drive = drive;
 
         MeasurementConsumer consumer = measurement -> {
             if (measurement.isValid()) {
@@ -110,6 +112,13 @@ public class Vision extends SubsystemBase {
     public void periodic() {
         for (VisionCamera cam : cameras) {
             cam.periodic();
+        }
+    }
+
+    @Override
+    public void simulationPeriodic() {
+        if (visionSim != null) {
+            visionSim.update(drive.getState().Pose);
         }
     }
 
