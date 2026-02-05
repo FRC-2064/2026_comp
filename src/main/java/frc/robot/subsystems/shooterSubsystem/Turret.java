@@ -1,21 +1,13 @@
 package frc.robot.subsystems.shooterSubsystem;
 
 import static edu.wpi.first.units.Units.Degrees;
-import static edu.wpi.first.units.Units.Inches;
 
 import com.ctre.phoenix6.hardware.TalonFX;
 
-import edu.wpi.first.math.VecBuilder;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Rotation3d;
-import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.shooterSubsystem.ShooterConstants.TurretConstants;
-import yams.mechanisms.config.MechanismPositionConfig;
 import yams.mechanisms.config.PivotConfig;
-import yams.mechanisms.config.MechanismPositionConfig.Plane;
 import yams.mechanisms.positional.Pivot;
 import yams.motorcontrollers.SmartMotorController;
 import yams.motorcontrollers.SmartMotorControllerConfig;
@@ -63,13 +55,7 @@ public class Turret extends SubsystemBase {
         .withHardLimit(TurretConstants.MIN_ANGLE, TurretConstants.MAX_ANGLE)
         .withSoftLimits(Degrees.of(5), Degrees.of(350))
         .withTelemetry("Turret", TelemetryVerbosity.HIGH)
-        .withMOI(TurretConstants.LENGTH, TurretConstants.WEIGHT)
-        .withMechanismPositionConfig(
-            new MechanismPositionConfig()
-            .withMaxRobotHeight(Inches.of(22))
-            .withMaxRobotLength(Inches.of(27))
-            .withMovementPlane(Plane.XY)
-        );
+        .withMOI(TurretConstants.LENGTH, TurretConstants.WEIGHT);
 
     private final Pivot turret = new Pivot(turretConfig);
 
@@ -92,7 +78,9 @@ public class Turret extends SubsystemBase {
     }
 
     public boolean atPosition() {
-        return turret.isNear(targetAngle, TurretConstants.TOLERANCE).getAsBoolean();
+        return turret
+            .isNear(targetAngle, TurretConstants.TOLERANCE)
+            .getAsBoolean();
     }
 
     @Override

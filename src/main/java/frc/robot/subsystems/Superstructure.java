@@ -8,18 +8,18 @@ import frc.robot.subsystems.shooterSubsystem.FlywheelSubsystem;
 import frc.robot.subsystems.shooterSubsystem.Hood;
 import frc.robot.subsystems.shooterSubsystem.ShooterConstants.FlyWheelConstants;
 import frc.robot.subsystems.shooterSubsystem.ShooterConstants.HoodConstants;
-import frc.robot.subsystems.shooterSubsystem.ShooterConstants.TurretConstants;
 import frc.robot.subsystems.shooterSubsystem.Turret;
 import frc.robot.utils.ShooterCalc;
 import frc.robot.utils.ShooterCalc.ShooterSolution;
 
-public class Superstructure extends SubsystemBase{
+public class Superstructure extends SubsystemBase {
+
     public enum DesiredState {
         STOW,
         INTAKE,
         SHOOT,
         SNOWBLOW,
-        OUTTAKE
+        OUTTAKE,
     }
 
     public enum State {
@@ -29,7 +29,7 @@ public class Superstructure extends SubsystemBase{
         SHOOTING_FEED,
         SNOWBLOW_SPINUP,
         SNOWBLOW_FEED,
-        OUTTAKING
+        OUTTAKING,
     }
 
     private DesiredState desiredState = DesiredState.STOW;
@@ -44,8 +44,14 @@ public class Superstructure extends SubsystemBase{
 
     private final ShooterCalc shooterCalc;
 
-    public Superstructure(Intake intake, Indexer indexer, Hood hood, Turret turret, FlywheelSubsystem flywheel,
-            ShooterCalc shooterCalc) {
+    public Superstructure(
+        Intake intake,
+        Indexer indexer,
+        Hood hood,
+        Turret turret,
+        FlywheelSubsystem flywheel,
+        ShooterCalc shooterCalc
+    ) {
         this.intake = intake;
         this.indexer = indexer;
         this.hood = hood;
@@ -83,10 +89,14 @@ public class Superstructure extends SubsystemBase{
                 currentState = State.OUTTAKING;
                 break;
             case SHOOT:
-            currentState = (isReadyToShoot()) ? State.SHOOTING_FEED : State.SHOOTING_SPINUP;
+                currentState = (isReadyToShoot())
+                    ? State.SHOOTING_FEED
+                    : State.SHOOTING_SPINUP;
                 break;
             case SNOWBLOW:
-            currentState = (isReadyToShoot()) ? State.SNOWBLOW_FEED : State.SNOWBLOW_SPINUP;
+                currentState = (isReadyToShoot())
+                    ? State.SNOWBLOW_FEED
+                    : State.SNOWBLOW_SPINUP;
                 break;
             default:
                 currentState = State.STOWED;
@@ -97,13 +107,23 @@ public class Superstructure extends SubsystemBase{
         turret.setTargetAngle(solution.turretAngle());
 
         switch (currentState) {
-            case STOWED: stow(); break;
-            case INTAKING: intake(); break;
-            case OUTTAKING: outtake(); break;
+            case STOWED:
+                stow();
+                break;
+            case INTAKING:
+                intake();
+                break;
+            case OUTTAKING:
+                outtake();
+                break;
             case SHOOTING_SPINUP:
-            case SHOOTING_FEED: shoot(solution); break;
+            case SHOOTING_FEED:
+                shoot(solution);
+                break;
             case SNOWBLOW_SPINUP:
-            case SNOWBLOW_FEED: snowblow(solution); break;
+            case SNOWBLOW_FEED:
+                snowblow(solution);
+                break;
         }
     }
 
@@ -127,35 +147,35 @@ public class Superstructure extends SubsystemBase{
         flywheel.setTargetSpeed(FlyWheelConstants.MIN_VELOCITY);
     }
 
-private void shoot(ShooterSolution sol) {
-    intake.setDesiredState(IntakeState.STOWED);
-    
-    flywheel.setTargetSpeed(sol.flywheelVelocity());
-    hood.setTargetAngle(sol.hoodAngle());
+    private void shoot(ShooterSolution sol) {
+        intake.setDesiredState(IntakeState.STOWED);
 
-    if (currentState == State.SHOOTING_FEED) {
-        indexer.feed();
-    } else {
-        indexer.stop();
+        flywheel.setTargetSpeed(sol.flywheelVelocity());
+        hood.setTargetAngle(sol.hoodAngle());
+
+        if (currentState == State.SHOOTING_FEED) {
+            indexer.feed();
+        } else {
+            indexer.stop();
+        }
     }
-}
 
-private void snowblow(ShooterSolution sol) {
-    intake.setDesiredState(IntakeState.INTAKE);
-    
-    flywheel.setTargetSpeed(sol.flywheelVelocity());
-    hood.setTargetAngle(sol.hoodAngle());
+    private void snowblow(ShooterSolution sol) {
+        intake.setDesiredState(IntakeState.INTAKE);
 
-    if (currentState == State.SNOWBLOW_FEED) {
-        indexer.feed();
-    } else {
-        indexer.stop();
+        flywheel.setTargetSpeed(sol.flywheelVelocity());
+        hood.setTargetAngle(sol.hoodAngle());
+
+        if (currentState == State.SNOWBLOW_FEED) {
+            indexer.feed();
+        } else {
+            indexer.stop();
+        }
     }
-}
 
     private boolean isReadyToShoot() {
-        return flywheel.isUpToSpeed()
-                && hood.atPosition()
-                && turret.atPosition();
+        return (
+            flywheel.isUpToSpeed() && hood.atPosition() && turret.atPosition()
+        );
     }
 }

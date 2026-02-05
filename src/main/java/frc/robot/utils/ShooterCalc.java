@@ -6,7 +6,7 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.*;
 import edu.wpi.first.math.interpolation.*;
 import edu.wpi.first.units.measure.*;
-import frc.robot.subsystems.CommandSwerveDrivetrain;
+import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 import frc.robot.utils.FieldConstants.Hub;
 import frc.robot.utils.FieldConstants.LeftBump;
 import frc.robot.utils.FieldConstants.LinesVertical;
@@ -15,20 +15,34 @@ import frc.robot.utils.FieldConstants.RightBump;
 public class ShooterCalc {
 
     public record FullShooterParams(double rpm, double hood, double tof) {
-        public static FullShooterParams interpolate(FullShooterParams s, FullShooterParams e, double t) {
+        public static FullShooterParams interpolate(
+            FullShooterParams s,
+            FullShooterParams e,
+            double t
+        ) {
             return new FullShooterParams(
-                    MathUtil.interpolate(s.rpm, e.rpm, t),
-                    MathUtil.interpolate(s.hood, e.hood, t),
-                    MathUtil.interpolate(s.tof, e.tof, t));
+                MathUtil.interpolate(s.rpm, e.rpm, t),
+                MathUtil.interpolate(s.hood, e.hood, t),
+                MathUtil.interpolate(s.tof, e.tof, t)
+            );
         }
     }
 
-    public record ShooterSolution(Angle turretAngle, Angle hoodAngle, AngularVelocity flywheelVelocity) {}
+    public record ShooterSolution(
+        Angle turretAngle,
+        Angle hoodAngle,
+        AngularVelocity flywheelVelocity
+    ) {}
 
-    private static final InterpolatingTreeMap<Double, FullShooterParams> SHOOTER_MAP = new InterpolatingTreeMap<>(
-            InverseInterpolator.forDouble(),
-            FullShooterParams::interpolate);
-    private static final InterpolatingDoubleTreeMap REVERSE_MAP = new InterpolatingDoubleTreeMap();
+    private static final InterpolatingTreeMap<
+        Double,
+        FullShooterParams
+    > SHOOTER_MAP = new InterpolatingTreeMap<>(
+        InverseInterpolator.forDouble(),
+        FullShooterParams::interpolate
+    );
+    private static final InterpolatingDoubleTreeMap REVERSE_MAP =
+        new InterpolatingDoubleTreeMap();
 
     static {
         add(1.5, 2800, 35, 0.38);
@@ -59,19 +73,29 @@ public class ShooterCalc {
         Pose2d pose = state.Pose;
 
         Translation2d robotVel = new Translation2d(
-                state.Speeds.vxMetersPerSecond,
-                state.Speeds.vyMetersPerSecond).rotateBy(pose.getRotation());
-        
-        Translation2d futurePos = pose.getTranslation().plus(robotVel.times(LATENCY));
+            state.Speeds.vxMetersPerSecond,
+            state.Speeds.vyMetersPerSecond
+        ).rotateBy(pose.getRotation());
+
+        Translation2d futurePos = pose
+            .getTranslation()
+            .plus(robotVel.times(LATENCY));
 
         Translation2d toGoal = getTarget(pose).minus(futurePos);
         double dist = toGoal.getNorm();
         FullShooterParams baseline = SHOOTER_MAP.get(dist);
 
-        Translation2d shotVel = toGoal.div(dist).times(dist / baseline.tof).minus(robotVel);
-        
-        Rotation2d baseTurretAngle = shotVel.getAngle().minus(pose.getRotation());
-        FullShooterParams params = SHOOTER_MAP.get(REVERSE_MAP.get(shotVel.getNorm()));
+        Translation2d shotVel = toGoal
+            .div(dist)
+            .times(dist / baseline.tof)
+            .minus(robotVel);
+
+        Rotation2d baseTurretAngle = shotVel
+            .getAngle()
+            .minus(pose.getRotation());
+        FullShooterParams params = SHOOTER_MAP.get(
+            REVERSE_MAP.get(shotVel.getNorm())
+        );
 
         double turretAdj = LianaHelpers.getTurretAngleAdjustment();
         double hoodAdj = LianaHelpers.getHoodAngleAdjustment();
@@ -84,21 +108,24 @@ public class ShooterCalc {
         );
     }
 
-private Translation2d getTarget(Pose2d pose) {
-    Pose2d logicalPose = AllianceFlip.apply(pose);
-    Translation2d targetLogical;
+    private Translation2d getTarget(Pose2d pose) {
+        Pose2d logicalPose = AllianceFlip.apply(pose);
+        Translation2d targetLogical;
 
+        if (logicalPose.getX() < LinesVertical.allianceZone) {
+            targetLogical = Hub.innerCenterPoint.toTranslation2d();
+        } else {
+            double distToLeft = logicalPose
+                .getTranslation()
+                .getDistance(LeftBump.nearLeftCorner);
+            double distToRight = logicalPose
+                .getTranslation()
+                .getDistance(RightBump.nearRightCorner);
 
-    if (logicalPose.getX() < LinesVertical.allianceZone) {
-        targetLogical = Hub.innerCenterPoint.toTranslation2d();
-    } else {
-        double distToLeft = logicalPose.getTranslation().getDistance(LeftBump.nearLeftCorner);
-        double distToRight = logicalPose.getTranslation().getDistance(RightBump.nearRightCorner);
-
-        targetLogical = (distToLeft < distToRight) 
-                ? LeftBump.nearLeftCorner 
+            targetLogical = (distToLeft < distToRight)
+                ? LeftBump.nearLeftCorner
                 : RightBump.nearRightCorner;
+        }
+        return AllianceFlip.apply(targetLogical);
     }
-    return AllianceFlip.apply(targetLogical);
-}
 }
