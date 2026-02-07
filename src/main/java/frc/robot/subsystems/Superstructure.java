@@ -1,81 +1,251 @@
 package frc.robot.subsystems;
 
-import java.util.EnumMap;
+import static edu.wpi.first.units.Units.Milliseconds;
+import static edu.wpi.first.units.Units.Seconds;
 
-import edu.wpi.first.math.InterpolatingMatrixTreeMap;
+import edu.wpi.first.units.measure.Time;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.collectionSubsystem.Indexer;
 import frc.robot.subsystems.collectionSubsystem.Intake;
-import frc.robot.subsystems.collectionSubsystem.Intake.DesiredState;
+import frc.robot.subsystems.collectionSubsystem.Intake.IntakeState;
+import frc.robot.subsystems.shooterSubsystem.FlywheelSubsystem;
 import frc.robot.subsystems.shooterSubsystem.Hood;
-import frc.robot.subsystems.shooterSubsystem.Shooter;
+import frc.robot.subsystems.shooterSubsystem.ShooterConstants.FlyWheelConstants;
+import frc.robot.subsystems.shooterSubsystem.ShooterConstants.HoodConstants;
 import frc.robot.subsystems.shooterSubsystem.Turret;
 import frc.robot.utils.ShooterCalc;
+import frc.robot.utils.ShooterCalc.ShooterSolution;
 
-public class Superstructure extends SubsystemBase{
-    public enum desiredState{STOW, INTAKE, SHOOT, SNOWBLOW, OUTTAKE}
-    
-    private desiredState state = desiredState.STOW;
+public class Superstructure extends SubsystemBase {
 
-    private final EnumMap<desiredState, Runnable> stateActions;
+    public enum DesiredState {
+        STOW,
+        INTAKE,
+        SHOOT,
+        SNOWBLOW,
+        OUTTAKE,
+    }
 
-    private Shooter shooter;
-    private Intake intake;
-    private Indexer indexer;
-    private ShooterCalc shooterCalc;
+    public enum State {
+        STOWED,
+        INTAKING,
+        SHOOTING_SPINUP,
+        SHOOTING_FEED,
+        SNOWBLOW_SPINUP,
+        SNOWBLOW_FEED,
+        OUTTAKING,
+    }
 
-    public Superstructure(Shooter shooter, Intake intake, Indexer indexer, ShooterCalc shooterCalc){
-        this.shooter = shooter;
-        this.indexer = indexer;
+    private DesiredState desiredState = DesiredState.STOW;
+    private State currentState = State.STOWED;
+
+    private final Intake intake;
+    private final Indexer indexer;
+
+    private final Hood hood;
+    private final Turret turret;
+    private final FlywheelSubsystem flywheel;
+
+    private final ShooterCalc shooterCalc;
+
+    private Time readyToShootTimer = Milliseconds.of(0);
+    private boolean wasReadyLastCycle = false;
+
+    public Superstructure(
+        Intake intake,
+        Indexer indexer,
+        Hood hood,
+        Turret turret,
+        FlywheelSubsystem flywheel,
+        ShooterCalc shooterCalc
+    ) {
         this.intake = intake;
+        this.indexer = indexer;
+        this.hood = hood;
+        this.turret = turret;
+        this.flywheel = flywheel;
         this.shooterCalc = shooterCalc;
-
-        stateActions = new EnumMap<>(desiredState.class);
-        stateActions.put(desiredState.STOW, this::STOW);
-        stateActions.put(desiredState.INTAKE, this::INTAKE);
-        stateActions.put(desiredState.SHOOT, this::SHOOT);
-        stateActions.put(desiredState.SNOWBLOW, this::SNOWBLOW);
-        stateActions.put(desiredState.OUTTAKE, this::OUTTAKE);
     }
 
-    private void STOW(){
-        intake.setDesiredState(DesiredState.STOWED);
-        shooter.stowCommand().schedule();
+    public void setDesiredState(DesiredState state) {
+        this.desiredState = state;
     }
 
-    private void INTAKE(){
-        intake.setDesiredState(DesiredState.INTAKE);
+    public DesiredState getDesiredState() {
+        return desiredState;
     }
 
-    private void SHOOT(){
-        shooter.shootCommand(shooterCalc).schedule();
-        indexer.feed();
+    public State getState() {
+        return currentState;
     }
 
-    private void SNOWBLOW(){
-        intake.setDesiredState(DesiredState.INTAKE);
-        shooter.shootCommand(shooterCalc).schedule();
-        indexer.feed();
+    public double getSpeedMultiplier() {
+        if (desiredState == DesiredState.SNOWBLOW) {
+            return 0.1;
+        }
+        return 1.0;
     }
 
-    private void OUTTAKE(){
-        intake.setDesiredState(DesiredState.OUTTAKE);
+    @Override
+    public void periodic() {
+        currentState = determineCurrentState();
+
+        var solution = shooterCalc.getSelectedSolution();
+        turret.setTargetAngle(solution.turretAngle());
+
+        switch (currentState) {
+            case STOWED:
+                stow();
+                break;
+            case INTAKING:
+                intake();
+                break;
+            case OUTTAKING:
+                outtake();
+                break;
+            case SHOOTING_SPINUP:
+            case SHOOTING_FEED:
+                shoot(solution);
+                break;
+            case SNOWBLOW_SPINUP:
+            case SNOWBLOW_FEED:
+                snowblow(solution);
+                break;
+        }
+
+        updateTelemetry();
+    }
+
+    public boolean isReadyToFire() {
+        return isReadyToShoot();
+    }
+
+    public boolean isFeeding() {
+        return (
+            currentState == State.SHOOTING_FEED ||
+            currentState == State.SNOWBLOW_FEED
+        );
+    }
+
+    public boolean isIntaking() {
+        return currentState == State.INTAKING;
+    }
+
+    public ShooterSolution getCurrentSolution() {
+        return shooterCalc.getSelectedSolution();
+    }
+
+    private void stow() {
+        intake.setDesiredState(IntakeState.STOWED);
+        indexer.stop();
+        flywheel.setTargetSpeed(FlyWheelConstants.MIN_VELOCITY);
+        hood.setTargetAngle(HoodConstants.STARTING_POS);
+    }
+
+    private void intake() {
+        intake.setDesiredState(IntakeState.INTAKE);
+        indexer.stop();
+        flywheel.setTargetSpeed(FlyWheelConstants.MIN_VELOCITY);
+        hood.setTargetAngle(HoodConstants.STARTING_POS);
+    }
+
+    private void outtake() {
+        intake.setDesiredState(IntakeState.OUTTAKE);
         indexer.outtake();
+        flywheel.setTargetSpeed(FlyWheelConstants.MIN_VELOCITY);
     }
 
-    public void setState(desiredState newState) {
-        if (state == newState) {
-            return;
-        }
+    private void shoot(ShooterSolution sol) {
+        intake.setDesiredState(IntakeState.STOWED);
 
-        state = newState;
-        Runnable action = stateActions.get(newState);
-        if (action != null) {
-            action.run();
+        flywheel.setTargetSpeed(sol.flywheelVelocity());
+        hood.setTargetAngle(sol.hoodAngle());
+
+        if (currentState == State.SHOOTING_FEED) {
+            indexer.feed();
+        } else {
+            indexer.stop();
         }
     }
 
-    public desiredState getState() {
-        return state;
+    private void snowblow(ShooterSolution sol) {
+        intake.setDesiredState(IntakeState.INTAKE);
+
+        flywheel.setTargetSpeed(sol.flywheelVelocity());
+        hood.setTargetAngle(sol.hoodAngle());
+
+        if (currentState == State.SNOWBLOW_FEED) {
+            indexer.feed();
+        } else {
+            indexer.stop();
+        }
+    }
+
+    private State determineCurrentState() {
+        switch (desiredState) {
+            case INTAKE:
+                return State.INTAKING;
+            case OUTTAKE:
+                return State.OUTTAKING;
+            case SHOOT:
+                return isReadyToShoot()
+                    ? State.SHOOTING_FEED
+                    : State.SHOOTING_SPINUP;
+            case SNOWBLOW:
+                return isReadyToShoot()
+                    ? State.SNOWBLOW_FEED
+                    : State.SNOWBLOW_SPINUP;
+            default:
+                return State.STOWED;
+        }
+    }
+
+    private boolean isReadyToShoot() {
+        var isReady =
+            flywheel.isUpToSpeed() && hood.atPosition() && turret.atPosition();
+        if (isReady && !wasReadyLastCycle) {
+            readyToShootTimer = Milliseconds.of(0);
+        } else if (isReady && !wasReadyLastCycle) {
+            readyToShootTimer.plus(Milliseconds.of(20));
+        } else {
+            readyToShootTimer = Milliseconds.zero();
+        }
+
+        wasReadyLastCycle = isReady;
+        return readyToShootTimer.gte(
+            SuperstructureConstants.READY_TO_SHOOT_DEBOUNCE_TIME
+        );
+    }
+
+    private void updateTelemetry() {
+        SmartDashboard.putString(
+            "Superstructure/DesiredState",
+            desiredState.name()
+        );
+        SmartDashboard.putString(
+            "Superstructure/CurrentState",
+            currentState.name()
+        );
+        SmartDashboard.putBoolean(
+            "Superstructure/ReadyToShoot",
+            isReadyToShoot()
+        );
+        SmartDashboard.putNumber(
+            "Superstructure/ReadyTimer",
+            readyToShootTimer.in(Seconds)
+        );
+        SmartDashboard.putBoolean(
+            "Superstructure/FlywheelReady",
+            flywheel.isUpToSpeed()
+        );
+        SmartDashboard.putBoolean(
+            "Superstructure/HoodReady",
+            hood.atPosition()
+        );
+        SmartDashboard.putBoolean(
+            "Superstructure/TurretReady",
+            turret.atPosition()
+        );
     }
 }

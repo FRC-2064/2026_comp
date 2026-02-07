@@ -15,8 +15,9 @@ public class ShooterConstants {
         new Translation3d(Inches.of(0), Inches.of(0), Inches.of(0));
 
     public static class FlyWheelConstants {
-        public static final int LEADER_ID = 25;
-        public static final int FOLLOWER_ID = 26;
+
+        public static final int LEADER_ID = 28;
+        public static final int FOLLOWER_ID = 29;
 
         public static final DCMotor MOTORS = DCMotor.getKrakenX60Foc(2);
         public static final Distance WHEEL_DIAMETER = Inches.of(4);
@@ -36,21 +37,32 @@ public class ShooterConstants {
         public static final double kV = 0.12;
         public static final double kA = 0.0;
 
-        public static final AngularVelocity MAX_VEL_PROFILED = DegreesPerSecond.of(90);
-        public static final AngularAcceleration MAX_ACCEL_PROFILED = DegreesPerSecondPerSecond.of(45);
+        public static final AngularVelocity MAX_VEL_PROFILED =
+            DegreesPerSecond.of(90);
+        public static final AngularAcceleration MAX_ACCEL_PROFILED =
+            DegreesPerSecondPerSecond.of(45);
 
-        public static final SimpleMotorFeedforward FEEDFORWARD = new SimpleMotorFeedforward(kS, kV, kA);
+        public static final SimpleMotorFeedforward FEEDFORWARD =
+            new SimpleMotorFeedforward(kS, kV, kA);
     }
 
     public static class HoodConstants {
-        public static final int MOTOR_ID = 27;
+
+        public static final Voltage HOMING_VOLTAGE = Volts.of(-1.5);
+        public static final Current HOMING_STALL_CURRENT = Amps.of(8);
+        public static final Time HOMING_STALL_TIME = Milliseconds.of(200);
+        public static final Time HOMING_TIMEOUT = Seconds.of(5);
+        public static final Angle HOMING_OFFSET = Degrees.of(0);
+
+        public static final int MOTOR_ID = 31;
         public static final DCMotor MOTOR_TYPE = DCMotor.getKrakenX44(1);
 
         public static final Distance MOI_LENGTH = Inches.of(6);
         public static final Mass MOI_MASS = Pounds.of(2);
 
         public static final MechanismGearing GEARING = new MechanismGearing(
-                GearBox.fromReductionStages((24.0 / 12.0), (160.0 / 10.0)));
+            GearBox.fromReductionStages((24.0 / 12.0), (160.0 / 10.0))
+        );
         public static final Angle STARTING_POS = Degrees.of(0);
         public static final Angle MIN_ANGLE = Degrees.of(0);
         public static final Angle MAX_ANGLE = Degrees.of(35);
@@ -63,24 +75,31 @@ public class ShooterConstants {
         public static final double kV = 0.0;
         public static final double kA = 0.0;
 
-        public static final AngularVelocity MAX_VELOCITY = DegreesPerSecond.of(10);
-        public static final AngularAcceleration MAX_ACCELERATION = DegreesPerSecondPerSecond.of(5);
+        public static final AngularVelocity MAX_VELOCITY = DegreesPerSecond.of(
+            10
+        );
+        public static final AngularAcceleration MAX_ACCELERATION =
+            DegreesPerSecondPerSecond.of(5);
         public static final Current STATOR_LIMIT = Amps.of(40);
         public static final Time RAMP_RATE = Seconds.of(0.25);
 
-        public static final SimpleMotorFeedforward FEEDFORWARD = new SimpleMotorFeedforward(kS, kV, kA);
+        public static final SimpleMotorFeedforward FEEDFORWARD =
+            new SimpleMotorFeedforward(kS, kV, kA);
     }
 
     public static class TurretConstants {
-        public static final int MOTOR_ID = 28;
+
+        public static final int MOTOR_ID = 30;
         public static final DCMotor MOTOR_TYPE = DCMotor.getKrakenX44(1);
 
         public static final Distance LENGTH = Meters.of(0.25);
         public static final Mass WEIGHT = Pounds.of(10);
-        public static final MechanismGearing GEARING = new MechanismGearing(GearBox.fromReductionStages(100));
-        public static final Angle STARTING_POS = Degrees.of(0);
-        public static final Angle MIN_ANGLE = Degrees.of(-180);
-        public static final Angle MAX_ANGLE = Degrees.of(180);
+        public static final MechanismGearing GEARING = new MechanismGearing(
+            GearBox.fromReductionStages(100)
+        );
+        public static final Angle STARTING_POS = Degrees.of(5);
+        public static final Angle MIN_ANGLE = Degrees.of(0);
+        public static final Angle MAX_ANGLE = Degrees.of(355);
         public static final Angle TOLERANCE = Degrees.of(2.0);
 
         public static final double kP = 50.0;
@@ -91,10 +110,12 @@ public class ShooterConstants {
         public static final double kA = 0.0;
 
         public static final AngularVelocity MAX_VEL = DegreesPerSecond.of(180);
-        public static final AngularAcceleration MAX_ACCEL = DegreesPerSecondPerSecond.of(360);
+        public static final AngularAcceleration MAX_ACCEL =
+            DegreesPerSecondPerSecond.of(360);
         public static final Current STATOR_LIMIT = Amps.of(40);
         public static final Time RAMP_RATE = Seconds.of(0.25);
 
-        public static final SimpleMotorFeedforward FEEDFORWARD = new SimpleMotorFeedforward(kS, kV, kA);
+        public static final SimpleMotorFeedforward FEEDFORWARD =
+            new SimpleMotorFeedforward(kS, kV, kA);
     }
 }

@@ -1,13 +1,13 @@
 package frc.robot.subsystems.shooterSubsystem;
 
 import static edu.wpi.first.units.Units.RPM;
+
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.math.Pair;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.shooterSubsystem.ShooterConstants.FlyWheelConstants;
-import frc.robot.utils.LianaHelpers;
 import yams.mechanisms.config.FlyWheelConfig;
 import yams.mechanisms.velocity.FlyWheel;
 import yams.motorcontrollers.SmartMotorController;
@@ -20,6 +20,7 @@ import yams.motorcontrollers.remote.TalonFXWrapper;
 public class FlywheelSubsystem extends SubsystemBase {
 
     private final TalonFX flywheelMotor = new TalonFX(FlyWheelConstants.LEADER_ID);
+    private final TalonFX followerMotor = new TalonFX(FlyWheelConstants.FOLLOWER_ID);
 
     private final SmartMotorControllerConfig motorConfig = new SmartMotorControllerConfig(this)
             .withControlMode(ControlMode.CLOSED_LOOP)
@@ -42,7 +43,7 @@ public class FlywheelSubsystem extends SubsystemBase {
             .withStatorCurrentLimit(FlyWheelConstants.STATOR_LIMIT)
             .withClosedLoopRampRate(FlyWheelConstants.RAMP_RATE)
             .withOpenLoopRampRate(FlyWheelConstants.RAMP_RATE)
-            .withFollowers(new Pair<>(FlyWheelConstants.FOLLOWER_ID, true))
+            .withFollowers(new Pair<>(followerMotor, true))
             .withTelemetry("ShooterMotor", TelemetryVerbosity.LOW);
 
     private final SmartMotorController motor = new TalonFXWrapper(
@@ -61,17 +62,16 @@ public class FlywheelSubsystem extends SubsystemBase {
 
     private AngularVelocity targetSpeed = RPM.of(0);
 
-    public FlywheelSubsystem() {
+public FlywheelSubsystem() {
+        setDefaultCommand(flywheel.setSpeed(() -> this.targetSpeed));
+    }
+
+    public void setTargetSpeed(AngularVelocity speed) {
+        this.targetSpeed = speed;
     }
 
     public boolean isUpToSpeed() {
-        return flywheel.getSpeed().isNear(targetSpeed, FlyWheelConstants.TOLERANCE);
-    }
-
-    public void setVelocity(AngularVelocity speed) {
-        var adjustedSpeed = RPM.of(speed.in(RPM) + getAjustment().in(RPM));
-        targetSpeed = adjustedSpeed;
-        flywheel.setSpeed(adjustedSpeed);
+        return flywheel.isNear(targetSpeed, FlyWheelConstants.TOLERANCE).getAsBoolean();
     }
 
     public AngularVelocity getTargetSpeed() {
@@ -90,9 +90,5 @@ public class FlywheelSubsystem extends SubsystemBase {
     @Override
     public void simulationPeriodic() {
         flywheel.simIterate();
-    }
-
-    private AngularVelocity getAjustment(){
-        return RPM.of(LianaHelpers.getFlywheelAdjustment());
     }
 }

@@ -10,8 +10,8 @@ import yams.gearing.MechanismGearing;
 public class CollectionConstants {
 
     public static class IntakeConstants {
-        public static final int WRIST_ID = 11;
-        public static final int ROLLER_ID = 12;
+        public static final int WRIST_ID = 32;
+        public static final int ROLLER_ID = 33;
 
         public static final DCMotor WRIST_MOTOR_TYPE = DCMotor.getKrakenX44(1);
         public static final MechanismGearing WRIST_GEARING = new MechanismGearing(GearBox.fromReductionStages(3, 4));
