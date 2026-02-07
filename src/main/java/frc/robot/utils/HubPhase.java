@@ -16,30 +16,30 @@ public class HubPhase extends SubsystemBase{
         if(gameData.length() > 0){
             switch (gameData.charAt(0)){
                 case 'B' :
-                    if(Timer.getFPGATimestamp() == 30){
+                    if(Timer.getFPGATimestamp() <= 30){
                         LianaHelpers.currentActiveHub("R");
                     }
-                    if(Timer.getFPGATimestamp() == 55){
+                    if(Timer.getFPGATimestamp() <= 55){
                         LianaHelpers.currentActiveHub("B");
                     }
-                    if(Timer.getFPGATimestamp() == 80){
+                    if(Timer.getFPGATimestamp() <= 80){
                         LianaHelpers.currentActiveHub("R");
                     }
-                    if(Timer.getFPGATimestamp() == 105){
+                    if(Timer.getFPGATimestamp() <= 105){
                         LianaHelpers.currentActiveHub("B");
                     }
                     break;
                 case 'R' :
-                    if(Timer.getFPGATimestamp() == 30){
+                    if(Timer.getFPGATimestamp() <= 30){
                         LianaHelpers.currentActiveHub("B");
                     }
-                    if(Timer.getFPGATimestamp() == 55){
+                    if(Timer.getFPGATimestamp() <= 55){
                         LianaHelpers.currentActiveHub("R");
                     }
-                    if(Timer.getFPGATimestamp() == 80){
+                    if(Timer.getFPGATimestamp() <= 80){
                         LianaHelpers.currentActiveHub("B");
                     }
-                    if(Timer.getFPGATimestamp() == 105){
+                    if(Timer.getFPGATimestamp() <= 105){
                         LianaHelpers.currentActiveHub("R");
                     }
                     break;
