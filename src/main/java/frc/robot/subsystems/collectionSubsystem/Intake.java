@@ -53,7 +53,8 @@ public class Intake extends SubsystemBase {
 
     public enum IntakeState {
         INTAKE, 
-        STOWED, 
+        STOWED,
+        DEPLOYED,
         OUTTAKE
     }
 
@@ -80,6 +81,10 @@ public class Intake extends SubsystemBase {
                 break;
             case STOWED:
                 wrist.setAngle(IntakeConstants.STOW_ANGLE);
+                rollerMotor.set(0);
+                break;
+            case DEPLOYED:
+                wrist.setAngle(IntakeConstants.INTAKE_ANGLE);
                 rollerMotor.set(0);
                 break;
         }
