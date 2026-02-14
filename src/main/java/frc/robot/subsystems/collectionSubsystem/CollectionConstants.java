@@ -32,8 +32,8 @@ public class CollectionConstants {
 
         public static final SimpleMotorFeedforward FEEDFORWARD = new SimpleMotorFeedforward(kS, kV, kA);
 
-        public static final Angle STOW_ANGLE = Degrees.of(0);
-        public static final Angle INTAKE_ANGLE = Degrees.of(90);
+        public static final Distance STOW_HEIGHT = Meters.of(0);
+        public static final Distance INTAKE_HEIGHT = Inches.of(10.018);
         public static final double INTAKE_SPEED = 1.0;
         public static final double OUTTAKE_SPEED = -1.0;
     }

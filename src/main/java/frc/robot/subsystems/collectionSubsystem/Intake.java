@@ -4,7 +4,9 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.collectionSubsystem.CollectionConstants.IntakeConstants;
+import yams.mechanisms.config.ElevatorConfig;
 import yams.mechanisms.config.PivotConfig;
+import yams.mechanisms.positional.Elevator;
 import yams.mechanisms.positional.Pivot;
 import yams.motorcontrollers.SmartMotorController;
 import yams.motorcontrollers.SmartMotorControllerConfig;
@@ -14,7 +16,7 @@ import yams.motorcontrollers.SmartMotorControllerConfig.TelemetryVerbosity;
 import yams.motorcontrollers.remote.TalonFXWrapper;
 
 public class Intake extends SubsystemBase {
-    private final TalonFX wristMotor = new TalonFX(IntakeConstants.WRIST_ID);
+    private final TalonFX extendMotor = new TalonFX(IntakeConstants.WRIST_ID);
 
     private final SmartMotorControllerConfig motorConfig = new SmartMotorControllerConfig(this)
             .withControlMode(ControlMode.CLOSED_LOOP)
@@ -36,23 +38,23 @@ public class Intake extends SubsystemBase {
             .withIdleMode(MotorMode.BRAKE)
             .withStatorCurrentLimit(IntakeConstants.STATOR_LIMIT)
             .withClosedLoopRampRate(IntakeConstants.RAMP_RATE)
-            .withTelemetry("HoodMotor", TelemetryVerbosity.LOW);
+            .withTelemetry("IntakeMotor", TelemetryVerbosity.LOW);
 
     private final SmartMotorController motor = new TalonFXWrapper(
-            wristMotor, IntakeConstants.MOTOR_TYPE, motorConfig);
+            extendMotor, IntakeConstants.MOTOR_TYPE, motorConfig);
 
-    private final PivotConfig wristConfig = new PivotConfig(motor)
-            .withStartingPosition(IntakeConstants.STOW_ANGLE)
-            .withHardLimit(IntakeConstants.STOW_ANGLE, IntakeConstants.INTAKE_ANGLE)
-            .withMOI(IntakeConstants.MOI_RADIUS, IntakeConstants.MOI_MASS)
+    private final ElevatorConfig extenderConfig = new ElevatorConfig(motor)
+            .withStartingHeight(IntakeConstants.STOW_HEIGHT)
+            .withHardLimits(IntakeConstants.STOW_HEIGHT, IntakeConstants.INTAKE_HEIGHT)
+            .withMass(IntakeConstants.MOI_MASS)
             .withTelemetry("Intake", TelemetryVerbosity.LOW);
 
-    private final Pivot wrist = new Pivot(wristConfig);
+    private final Elevator rack = new Elevator(extenderConfig);
 
     private final TalonFX rollerMotor = new TalonFX(IntakeConstants.ROLLER_ID);
 
     public enum IntakeState {
-        INTAKE, 
+        INTAKE,
         STOWED, 
         OUTTAKE
     }
@@ -71,15 +73,15 @@ public class Intake extends SubsystemBase {
 
         switch (newState) {
             case INTAKE:
-                wrist.setAngle(IntakeConstants.INTAKE_ANGLE);
+                rack.setHeight(IntakeConstants.INTAKE_HEIGHT);
                 rollerMotor.set(IntakeConstants.INTAKE_SPEED);
                 break;
             case OUTTAKE:
-                wrist.setAngle(IntakeConstants.INTAKE_ANGLE);
+                rack.setHeight(IntakeConstants.INTAKE_HEIGHT);
                 rollerMotor.set(IntakeConstants.OUTTAKE_SPEED);
                 break;
             case STOWED:
-                wrist.setAngle(IntakeConstants.STOW_ANGLE);
+                rack.setHeight(IntakeConstants.STOW_HEIGHT);
                 rollerMotor.set(0);
                 break;
         }
@@ -91,12 +93,12 @@ public class Intake extends SubsystemBase {
 
     @Override
     public void periodic() {
-        wrist.updateTelemetry();
+        rack.updateTelemetry();
         SmartDashboard.putString("Intake/DesiredState", desiredState.toString());
     }
 
     @Override
     public void simulationPeriodic() {
-        wrist.simIterate();
+        rack.simIterate();
     }
 }
