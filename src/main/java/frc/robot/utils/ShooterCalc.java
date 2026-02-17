@@ -5,7 +5,10 @@ import static edu.wpi.first.units.Units.*;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.*;
 import edu.wpi.first.math.interpolation.*;
+import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.networktables.StructArrayPublisher;
 import edu.wpi.first.units.measure.*;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 import frc.robot.utils.FieldConstants.Hub;
 import frc.robot.utils.FieldConstants.LeftBump;
@@ -13,6 +16,9 @@ import frc.robot.utils.FieldConstants.LinesVertical;
 import frc.robot.utils.FieldConstants.RightBump;
 
 public class ShooterCalc {
+
+           private StructArrayPublisher<Translation2d> publisher = NetworkTableInstance.getDefault().getStructArrayTopic(
+            "ShooterCalc/Target", Translation2d.struct).publish();
 
     public record FullShooterParams(double rpm, double hood, double tof) {
         public static FullShooterParams interpolate(
@@ -126,6 +132,13 @@ public class ShooterCalc {
                 ? LeftBump.nearLeftCorner
                 : RightBump.nearRightCorner;
         }
+
+        publishTranslation(targetLogical);
+
         return AllianceFlip.apply(targetLogical);
+    }
+
+    private void publishTranslation(Translation2d loc) {
+            publisher.set(new Translation2d[] {loc});
     }
 }
