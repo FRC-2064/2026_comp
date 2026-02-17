@@ -2,6 +2,7 @@ package frc.robot.subsystems.shooterSubsystem;
 
 import static edu.wpi.first.units.Units.*;
 
+
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.system.plant.DCMotor;
@@ -109,6 +110,13 @@ public class ShooterConstants {
         public static final double kV = 0.12;
         public static final double kA = 0.0;
 
+        public static final double kP_SIM = 50.0;
+        public static final double kI_SIM = 0.0;
+        public static final double kD_SIM = 2.0;
+        public static final double kS_SIM = 0.0;
+        public static final double kV_SIM = 0.12;
+        public static final double kA_SIM = 0.0;
+
         public static final AngularVelocity MAX_VEL = DegreesPerSecond.of(180);
         public static final AngularAcceleration MAX_ACCEL =
             DegreesPerSecondPerSecond.of(360);
@@ -117,5 +125,8 @@ public class ShooterConstants {
 
         public static final SimpleMotorFeedforward FEEDFORWARD =
             new SimpleMotorFeedforward(kS, kV, kA);
+
+            public static final SimpleMotorFeedforward FEEDFORWARD_SIM =
+            new SimpleMotorFeedforward(kS_SIM, kV_SIM, kA_SIM);
     }
 }
