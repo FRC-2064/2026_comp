@@ -78,7 +78,7 @@ public class RobotContainer {
     public RobotContainer() {
         NamedCommands.registerCommand("intake", new RunCommand(() -> superstructure.setDesiredState(DesiredState.INTAKE)));
         NamedCommands.registerCommand("shoot", new RunCommand(() -> superstructure.setDesiredState(DesiredState.SHOOT)));
-        NamedCommands.registerCommand("snowblow", new RunCommand(() - superstructure.setDesiredState(DesiredState.SNOWBLOW)));
+        NamedCommands.registerCommand("snowblow", new RunCommand(() -> superstructure.setDesiredState(DesiredState.SNOWBLOW)));
         NamedCommands.registerCommand("stow", new RunCommand(() -> superstructure.setDesiredState(DesiredState.STOW)));
     
         configureBindings();
