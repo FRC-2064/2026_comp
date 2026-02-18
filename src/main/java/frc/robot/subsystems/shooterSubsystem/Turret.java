@@ -1,9 +1,10 @@
 package frc.robot.subsystems.shooterSubsystem;
 
 import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.Rotations;
 
+import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
-
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.shooterSubsystem.ShooterConstants.TurretConstants;
@@ -15,8 +16,28 @@ import yams.motorcontrollers.SmartMotorControllerConfig.ControlMode;
 import yams.motorcontrollers.SmartMotorControllerConfig.MotorMode;
 import yams.motorcontrollers.SmartMotorControllerConfig.TelemetryVerbosity;
 import yams.motorcontrollers.remote.TalonFXWrapper;
+import yams.units.EasyCRT;
+import yams.units.EasyCRTConfig;
 
 public class Turret extends SubsystemBase {
+
+    private CANcoder throughBoreSmall = new CANcoder(1);
+    private CANcoder throughBoreLarge = new CANcoder(2);
+
+    private EasyCRTConfig easyCRTConfig = new EasyCRTConfig(
+        throughBoreSmall.getAbsolutePosition().asSupplier(),
+        throughBoreLarge.getAbsolutePosition().asSupplier()
+    )
+        .withCommonDriveGear(1.0, 80, 13, 14)
+        .withMechanismRange(
+            TurretConstants.MIN_ANGLE,
+            TurretConstants.MAX_ANGLE
+        )
+        .withAbsoluteEncoderOffsets(Rotations.of(0), Rotations.of(0))
+        .withMatchTolerance(Rotations.of(0.06))
+        .withAbsoluteEncoderInversions(false, false);
+
+    private EasyCRT solver = new EasyCRT(easyCRTConfig);
 
     private SmartMotorControllerConfig motorConfig =
         new SmartMotorControllerConfig(this)
@@ -62,6 +83,11 @@ public class Turret extends SubsystemBase {
     private Angle targetAngle = Degrees.of(0);
 
     public Turret() {
+        solver
+            .getAngleOptional()
+            .ifPresent(mechAngle -> {
+                motor.setEncoderPosition(mechAngle);
+            });
         setDefaultCommand(turret.setAngle(() -> this.targetAngle));
     }
 
