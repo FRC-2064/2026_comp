@@ -52,6 +52,8 @@ public class Superstructure extends SubsystemBase {
     private Time readyToShootTimer = Milliseconds.of(0);
     private boolean wasReadyLastCycle = false;
 
+    private double speedMult = 1.0;
+
     public Superstructure(
         Intake intake,
         Indexer indexer,
@@ -81,10 +83,7 @@ public class Superstructure extends SubsystemBase {
     }
 
     public double getSpeedMultiplier() {
-        if (desiredState == DesiredState.SNOWBLOW) {
-            return 0.1;
-        }
-        return 1.0;
+        return speedMult;
     }
 
     @Override
@@ -137,6 +136,7 @@ public class Superstructure extends SubsystemBase {
     }
 
     private void stow() {
+        speedMult = 1.0;
         intake.setDesiredState(IntakeState.STOWED);
         indexer.stop();
         flywheel.setTargetSpeed(FlyWheelConstants.MIN_VELOCITY);
@@ -144,6 +144,7 @@ public class Superstructure extends SubsystemBase {
     }
 
     private void intake() {
+        speedMult = 0.75;
         intake.setDesiredState(IntakeState.INTAKE);
         indexer.stop();
         flywheel.setTargetSpeed(FlyWheelConstants.MIN_VELOCITY);
@@ -151,12 +152,14 @@ public class Superstructure extends SubsystemBase {
     }
 
     private void outtake() {
+        speedMult = 1.0;
         intake.setDesiredState(IntakeState.OUTTAKE);
         indexer.outtake();
         flywheel.setTargetSpeed(FlyWheelConstants.MIN_VELOCITY);
     }
 
     private void shoot(ShooterSolution sol) {
+        speedMult = 0.75;
         intake.setDesiredState(IntakeState.STOWED);
 
         flywheel.setTargetSpeed(sol.flywheelVelocity());
@@ -170,6 +173,7 @@ public class Superstructure extends SubsystemBase {
     }
 
     private void snowblow(ShooterSolution sol) {
+        speedMult = 0.25;
         intake.setDesiredState(IntakeState.INTAKE);
 
         flywheel.setTargetSpeed(sol.flywheelVelocity());
