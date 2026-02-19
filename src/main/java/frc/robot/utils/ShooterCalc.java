@@ -1,11 +1,26 @@
 package frc.robot.utils;
 
-import static edu.wpi.first.units.Units.*;
+import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.Inches;
+import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.RPM;
+import static edu.wpi.first.units.Units.Radians;
 
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.geometry.*;
-import edu.wpi.first.math.interpolation.*;
-import edu.wpi.first.units.measure.*;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
+import edu.wpi.first.math.interpolation.InterpolatingTreeMap;
+import edu.wpi.first.math.interpolation.InverseInterpolator;
+import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.networktables.StructArrayPublisher;
+import edu.wpi.first.networktables.StructPublisher;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 import frc.robot.subsystems.shooterSubsystem.ShooterConstants;
 import frc.robot.utils.FieldConstants.Hub;
@@ -14,6 +29,21 @@ import frc.robot.utils.FieldConstants.LinesVertical;
 import frc.robot.utils.FieldConstants.RightBump;
 
 public class ShooterCalc {
+
+    private StructPublisher<Translation2d> target =
+        NetworkTableInstance.getDefault()
+            .getStructTopic("ShooterCalc/Target", Translation2d.struct)
+            .publish();
+
+    private StructArrayPublisher<Pose3d> actualPath =
+        NetworkTableInstance.getDefault()
+            .getStructArrayTopic("ShooterCalc/ActualPath", Pose3d.struct)
+            .publish();
+
+    private StructArrayPublisher<Pose3d> targetedPath =
+        NetworkTableInstance.getDefault()
+            .getStructArrayTopic("ShooterCalc/TargetedPath", Pose3d.struct)
+            .publish();
 
     public record FullShooterParams(double rpm, double hood, double tof) {
         public static FullShooterParams interpolate(
@@ -122,6 +152,8 @@ public class ShooterCalc {
             buildPath(startPose, shotVel, vLaunchZ, baseline.tof())
         );
 
+        target.set(toGoal);
+
         return new ShooterSolution(
             Degrees.of(baseTurretAngle.getDegrees() + turretAdj),
             Degrees.of(params.hood + hoodAdj),
@@ -147,6 +179,7 @@ public class ShooterCalc {
             double distToRight = logicalPose.getTranslation().getDistance(RightBump.rightBumpTarget);
             targetLogical = (distToLeft < distToRight) ? LeftBump.leftBumpTarget : RightBump.rightBumpTarget;
         }
+
         return AllianceFlip.apply(targetLogical);
     }
 
@@ -168,9 +201,5 @@ public class ShooterCalc {
             path[i] = new Pose3d(x, y, z, new Rotation3d());
         }
         return path;
-    }
-
-    private void publishTranslation(Translation2d loc) {
-        publisher.set(new Translation2d[] { loc });
     }
 }
