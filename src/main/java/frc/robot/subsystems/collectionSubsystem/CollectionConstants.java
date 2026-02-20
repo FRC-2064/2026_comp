@@ -10,11 +10,11 @@ import yams.gearing.MechanismGearing;
 public class CollectionConstants {
 
     public static class IntakeConstants {
-        public static final int WRIST_ID = 32;
+        public static final int EXTEND_ID = 32;
         public static final int ROLLER_ID = 33;
 
-        public static final DCMotor WRIST_MOTOR_TYPE = DCMotor.getKrakenX44(1);
-        public static final MechanismGearing WRIST_GEARING = new MechanismGearing(GearBox.fromReductionStages(3, 4));
+        public static final DCMotor RACK_MOTOR_TYPE = DCMotor.getKrakenX44(1);
+        public static final MechanismGearing RACK_GEARING = new MechanismGearing(GearBox.fromReductionStages(3, 4));
         public static final Distance MOI_RADIUS = Meters.of(0.25);
         public static final Mass MOI_MASS = Pounds.of(4);
         public static final DCMotor MOTOR_TYPE = DCMotor.getKrakenX60Foc(1);

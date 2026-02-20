@@ -16,7 +16,7 @@ import yams.motorcontrollers.SmartMotorControllerConfig.TelemetryVerbosity;
 import yams.motorcontrollers.remote.TalonFXWrapper;
 
 public class Intake extends SubsystemBase {
-    private final TalonFX extendMotor = new TalonFX(IntakeConstants.WRIST_ID);
+    private final TalonFX extendMotor = new TalonFX(IntakeConstants.EXTEND_ID);
 
     private final SmartMotorControllerConfig motorConfig = new SmartMotorControllerConfig(this)
             .withControlMode(ControlMode.CLOSED_LOOP)
@@ -34,7 +34,7 @@ public class Intake extends SubsystemBase {
                     IntakeConstants.MAX_VEL,
                     IntakeConstants.MAX_ACCEL)
             .withSimFeedforward(IntakeConstants.FEEDFORWARD)
-            .withGearing(IntakeConstants.WRIST_GEARING)
+            .withGearing(IntakeConstants.RACK_GEARING)
             .withIdleMode(MotorMode.BRAKE)
             .withStatorCurrentLimit(IntakeConstants.STATOR_LIMIT)
             .withClosedLoopRampRate(IntakeConstants.RAMP_RATE)
@@ -42,7 +42,7 @@ public class Intake extends SubsystemBase {
 
     private final SmartMotorController motor = new TalonFXWrapper(
             extendMotor, IntakeConstants.MOTOR_TYPE, motorConfig);
-
+  
     private final ElevatorConfig extenderConfig = new ElevatorConfig(motor)
             .withStartingHeight(IntakeConstants.STOW_HEIGHT)
             .withHardLimits(IntakeConstants.STOW_HEIGHT, IntakeConstants.INTAKE_HEIGHT)
