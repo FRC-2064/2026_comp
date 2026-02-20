@@ -27,10 +27,11 @@ import frc.robot.utils.FieldConstants.Hub;
 import frc.robot.utils.FieldConstants.LeftBump;
 import frc.robot.utils.FieldConstants.LinesVertical;
 import frc.robot.utils.FieldConstants.RightBump;
+import frc.robot.utils.Liana.LianaHelpers;
 
 public class ShooterCalc {
 
-    private StructPublisher<Translation2d> target =
+    private StructPublisher<Translation2d> targetPublisher =
         NetworkTableInstance.getDefault()
             .getStructTopic("ShooterCalc/Target", Translation2d.struct)
             .publish();
@@ -108,56 +109,56 @@ public class ShooterCalc {
             state.Speeds.vyMetersPerSecond
         ).rotateBy(pose.getRotation());
 
-        Translation2d futurePos = pose
-            .getTranslation()
-            .plus(robotVel.times(LATENCY));
+        Translation2d latencyOffset = robotVel.times(LATENCY);
+        Translation2d turretPos = pose.getTranslation().plus(latencyOffset);
 
-        Translation2d toGoal = getTarget(pose).minus(futurePos);
-        double dist = Math.max(toGoal.getNorm(), 0.001);
+        Translation2d target = getTarget(pose);
 
-        FullShooterParams baseline = SHOOTER_MAP.get(dist);
+        Translation2d lookaheadPos = turretPos;
+        double lookaheadDist = target.getDistance(turretPos);
 
-        Translation2d shotVel = toGoal
-            .div(dist)
-            .times(dist / baseline.tof)
-            .minus(robotVel);
+        for (int i = 0; i < 20; i++) {
+            double tof = SHOOTER_MAP.get(lookaheadDist).tof();
+            Translation2d offset = robotVel.times(tof);
+            lookaheadPos = turretPos.plus(offset);
+            lookaheadDist = target.getDistance(lookaheadPos);
+        }
 
-        Rotation2d baseTurretAngle = shotVel
-            .getAngle()
-            .minus(pose.getRotation());
-        FullShooterParams params = SHOOTER_MAP.get(
-            REVERSE_MAP.get(shotVel.getNorm())
-        );
+        Translation2d toGoal = target.minus(lookaheadPos);
+        Rotation2d turretAngle = toGoal.getAngle().minus(pose.getRotation());
 
-        double turretAdj = LianaHelpers.getTurretAngleAdjustment();
-        double hoodAdj = LianaHelpers.getHoodAngleAdjustment();
-        double flywheelAdj = LianaHelpers.getFlywheelAdjustment();
+        FullShooterParams params = SHOOTER_MAP.get(lookaheadDist);
 
-        double finalHoodAngle = params.hood + hoodAdj;
-        double vLaunchH = shotVel.getNorm();
+        double finalHoodAngle =
+            params.hood() + LianaHelpers.getHoodAngleAdjustment();
+        double vLaunchH = toGoal.getNorm() / params.tof();
         double vLaunchZ =
             vLaunchH * Math.tan(Degrees.of(finalHoodAngle - 15).in(Radians));
 
-        Translation3d startPose = new Translation3d(
+        Translation3d startPose3d = new Translation3d(
             pose.getX(),
             pose.getY(),
             ShooterConstants.ROBOT_CENTER_TO_SHOOTER.getZ()
         );
-        Translation2d actualVelH = shotVel.plus(robotVel);
+
+        Translation2d shotVelH = toGoal.div(toGoal.getNorm()).times(vLaunchH);
+        Translation2d actualVelH = shotVelH.plus(robotVel);
 
         actualPath.set(
-            buildPath(startPose, actualVelH, vLaunchZ, baseline.tof())
+            buildPath(startPose3d, actualVelH, vLaunchZ, params.tof())
         );
         targetedPath.set(
-            buildPath(startPose, shotVel, vLaunchZ, baseline.tof())
+            buildPath(startPose3d, shotVelH, vLaunchZ, params.tof())
         );
-
-        target.set(toGoal);
+        targetPublisher.set(toGoal);
 
         return new ShooterSolution(
-            Degrees.of(baseTurretAngle.getDegrees() + turretAdj),
-            Degrees.of(params.hood + hoodAdj),
-            RPM.of(params.rpm + flywheelAdj)
+            Degrees.of(
+                turretAngle.getDegrees() +
+                    LianaHelpers.getTurretAngleAdjustment()
+            ),
+            Degrees.of(params.hood() + LianaHelpers.getHoodAngleAdjustment()),
+            RPM.of(params.rpm() + LianaHelpers.getFlywheelAdjustment())
         );
     }
 
@@ -175,9 +176,15 @@ public class ShooterCalc {
         if (minX < LinesVertical.allianceZone) {
             targetLogical = Hub.innerCenterPoint.toTranslation2d();
         } else {
-            double distToLeft = logicalPose.getTranslation().getDistance(LeftBump.leftBumpTarget);
-            double distToRight = logicalPose.getTranslation().getDistance(RightBump.rightBumpTarget);
-            targetLogical = (distToLeft < distToRight) ? LeftBump.leftBumpTarget : RightBump.rightBumpTarget;
+            double distToLeft = logicalPose
+                .getTranslation()
+                .getDistance(LeftBump.leftBumpTarget);
+            double distToRight = logicalPose
+                .getTranslation()
+                .getDistance(RightBump.rightBumpTarget);
+            targetLogical = (distToLeft < distToRight)
+                ? LeftBump.leftBumpTarget
+                : RightBump.rightBumpTarget;
         }
 
         return AllianceFlip.apply(targetLogical);
