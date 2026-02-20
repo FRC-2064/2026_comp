@@ -2,7 +2,6 @@ package frc.robot.subsystems.shooterSubsystem;
 
 import static edu.wpi.first.units.Units.*;
 
-
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.system.plant.DCMotor;
@@ -126,7 +125,16 @@ public class ShooterConstants {
         public static final SimpleMotorFeedforward FEEDFORWARD =
             new SimpleMotorFeedforward(kS, kV, kA);
 
-            public static final SimpleMotorFeedforward FEEDFORWARD_SIM =
+        public static final SimpleMotorFeedforward FEEDFORWARD_SIM =
             new SimpleMotorFeedforward(kS_SIM, kV_SIM, kA_SIM);
+    }
+
+    public static class KickerConstants {
+
+        public static final int KICKER_LEADER_ID = 0;
+        public static final int KICKER_FOLLOWER_ID = 0;
+
+        public static final double FEED_SPEED = 0.75;
+        public static final double OUTTAKE_SPEED = -0.5;
     }
 }
