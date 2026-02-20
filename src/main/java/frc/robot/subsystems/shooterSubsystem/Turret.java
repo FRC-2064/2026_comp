@@ -8,6 +8,7 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.shooterSubsystem.ShooterConstants.TurretConstants;
+import frc.robot.utils.RobotConstants;
 import yams.mechanisms.config.PivotConfig;
 import yams.mechanisms.positional.Pivot;
 import yams.motorcontrollers.SmartMotorController;
@@ -51,18 +52,18 @@ public class Turret extends SubsystemBase {
             )
             .withFeedforward(TurretConstants.FEEDFORWARD)
             .withSimClosedLoopController(
-                15,
-                0,
-                2,
+                TurretConstants.kP_SIM,
+                TurretConstants.kI_SIM, 
+                TurretConstants.kD_SIM, 
                 TurretConstants.MAX_VEL,
                 TurretConstants.MAX_ACCEL
-            )
-            .withSimFeedforward(TurretConstants.FEEDFORWARD)
+                )
+            .withSimFeedforward(TurretConstants.FEEDFORWARD_SIM)
             .withGearing(TurretConstants.GEARING)
             .withIdleMode(MotorMode.BRAKE)
             .withStatorCurrentLimit(TurretConstants.STATOR_LIMIT)
             .withClosedLoopRampRate(TurretConstants.RAMP_RATE)
-            .withTelemetry("TurretMotor", TelemetryVerbosity.HIGH);
+            .withTelemetry("TurretMotor", RobotConstants.GetTelemetry());
 
     private final TalonFX turretMotor = new TalonFX(TurretConstants.MOTOR_ID);
     private final SmartMotorController motor = new TalonFXWrapper(
@@ -75,7 +76,7 @@ public class Turret extends SubsystemBase {
         .withStartingPosition(TurretConstants.STARTING_POS)
         .withHardLimit(TurretConstants.MIN_ANGLE, TurretConstants.MAX_ANGLE)
         .withSoftLimits(Degrees.of(5), Degrees.of(350))
-        .withTelemetry("Turret", TelemetryVerbosity.HIGH)
+        .withTelemetry("Turret", RobotConstants.GetTelemetry())
         .withMOI(TurretConstants.LENGTH, TurretConstants.WEIGHT);
 
     private final Pivot turret = new Pivot(turretConfig);

@@ -8,6 +8,7 @@ import edu.wpi.first.math.Pair;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.shooterSubsystem.ShooterConstants.FlyWheelConstants;
+import frc.robot.utils.RobotConstants;
 import yams.mechanisms.config.FlyWheelConfig;
 import yams.mechanisms.velocity.FlyWheel;
 import yams.motorcontrollers.SmartMotorController;
@@ -44,7 +45,7 @@ public class FlywheelSubsystem extends SubsystemBase {
             .withClosedLoopRampRate(FlyWheelConstants.RAMP_RATE)
             .withOpenLoopRampRate(FlyWheelConstants.RAMP_RATE)
             .withFollowers(new Pair<>(followerMotor, true))
-            .withTelemetry("ShooterMotor", TelemetryVerbosity.LOW);
+            .withTelemetry("ShooterMotor", RobotConstants.GetTelemetry());
 
     private final SmartMotorController motor = new TalonFXWrapper(
             flywheelMotor,
@@ -56,7 +57,7 @@ public class FlywheelSubsystem extends SubsystemBase {
             .withMass(FlyWheelConstants.WHEEL_MASS)
             .withLowerSoftLimit(FlyWheelConstants.MIN_VELOCITY)
             .withUpperSoftLimit(FlyWheelConstants.MAX_VELOCITY)
-            .withTelemetry("Shooter", TelemetryVerbosity.LOW);
+            .withTelemetry("Shooter", RobotConstants.GetTelemetry());
 
     private final FlyWheel flywheel = new FlyWheel(flywheelConfig);
 

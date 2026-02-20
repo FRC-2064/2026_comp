@@ -25,6 +25,7 @@ public class Superstructure extends SubsystemBase {
         SHOOT,
         SNOWBLOW,
         OUTTAKE,
+        DEPLOYED
     }
 
     public enum State {
@@ -35,6 +36,7 @@ public class Superstructure extends SubsystemBase {
         SNOWBLOW_SPINUP,
         SNOWBLOW_FEED,
         OUTTAKING,
+        DEPLOYED
     }
 
     private DesiredState desiredState = DesiredState.STOW;
@@ -111,6 +113,8 @@ public class Superstructure extends SubsystemBase {
             case SNOWBLOW_FEED:
                 snowblow(solution);
                 break;
+            case DEPLOYED:
+                deployed();
         }
 
         updateTelemetry();
@@ -149,6 +153,13 @@ public class Superstructure extends SubsystemBase {
         indexer.stop();
         flywheel.setTargetSpeed(FlyWheelConstants.MIN_VELOCITY);
         hood.setTargetAngle(HoodConstants.STARTING_POS);
+    }
+
+    private void deployed(){
+        indexer.stop();
+        flywheel.setTargetSpeed(FlyWheelConstants.MIN_VELOCITY);
+        hood.setTargetAngle(HoodConstants.STARTING_POS);
+        intake.setDesiredState(IntakeState.DEPLOYED);
     }
 
     private void outtake() {
@@ -200,6 +211,8 @@ public class Superstructure extends SubsystemBase {
                 return isReadyToShoot()
                     ? State.SNOWBLOW_FEED
                     : State.SNOWBLOW_SPINUP;
+            case DEPLOYED:
+                return State.DEPLOYED;
             default:
                 return State.STOWED;
         }
