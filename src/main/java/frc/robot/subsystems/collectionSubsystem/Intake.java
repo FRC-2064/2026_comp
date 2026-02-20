@@ -54,8 +54,9 @@ public class Intake extends SubsystemBase {
     private final TalonFX rollerMotor = new TalonFX(IntakeConstants.ROLLER_ID);
 
     public enum IntakeState {
-        INTAKE,
-        STOWED, 
+        INTAKE, 
+        STOWED,
+        DEPLOYED,
         OUTTAKE
     }
 
@@ -82,6 +83,10 @@ public class Intake extends SubsystemBase {
                 break;
             case STOWED:
                 rack.setHeight(IntakeConstants.STOW_HEIGHT);
+                rollerMotor.set(0);
+                break;
+            case DEPLOYED:
+                wrist.setAngle(IntakeConstants.INTAKE_ANGLE);
                 rollerMotor.set(0);
                 break;
         }

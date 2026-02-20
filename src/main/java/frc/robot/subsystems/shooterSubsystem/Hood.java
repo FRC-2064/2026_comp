@@ -12,13 +12,13 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.shooterSubsystem.ShooterConstants.HoodConstants;
+import frc.robot.utils.RobotConstants;
 import yams.mechanisms.config.PivotConfig;
 import yams.mechanisms.positional.Pivot;
 import yams.motorcontrollers.SmartMotorController;
 import yams.motorcontrollers.SmartMotorControllerConfig;
 import yams.motorcontrollers.SmartMotorControllerConfig.ControlMode;
 import yams.motorcontrollers.SmartMotorControllerConfig.MotorMode;
-import yams.motorcontrollers.SmartMotorControllerConfig.TelemetryVerbosity;
 import yams.motorcontrollers.remote.TalonFXWrapper;
 
 public class Hood extends SubsystemBase {
@@ -55,7 +55,7 @@ public class Hood extends SubsystemBase {
             .withIdleMode(MotorMode.BRAKE)
             .withStatorCurrentLimit(HoodConstants.STATOR_LIMIT)
             .withClosedLoopRampRate(HoodConstants.RAMP_RATE)
-            .withTelemetry("HoodMotor", TelemetryVerbosity.LOW);
+            .withTelemetry("HoodMotor", RobotConstants.GetTelemetry());
 
     private final SmartMotorController motor = new TalonFXWrapper(
         hoodMotor,
@@ -68,7 +68,7 @@ public class Hood extends SubsystemBase {
         .withHardLimit(HoodConstants.MIN_ANGLE, HoodConstants.MAX_ANGLE)
         .withSoftLimits(HoodConstants.MIN_ANGLE, HoodConstants.MAX_ANGLE)
         .withMOI(HoodConstants.MOI_LENGTH, HoodConstants.MOI_MASS)
-        .withTelemetry("Hood", TelemetryVerbosity.LOW);
+        .withTelemetry("Hood", RobotConstants.GetTelemetry());
 
     private final Pivot hood = new Pivot(hoodConfig);
 

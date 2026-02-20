@@ -212,6 +212,11 @@ public class FieldConstants {
         );
         public static final Translation2d oppFarRightCorner =
             Hub.oppFarLeftCorner;
+
+        public static final Translation2d leftBumpTarget = new Translation2d(
+            LinesVertical.hubCenter,
+            fieldWidth / 2.0 + Hub.width / 2.0 + LeftBump.width / 2.0
+        );
     }
 
     /** Right Bump related constants */
@@ -247,6 +252,11 @@ public class FieldConstants {
         );
         public static final Translation2d oppFarRightCorner =
             Hub.oppFarLeftCorner;
+
+        public static final Translation2d rightBumpTarget = new Translation2d(
+            LinesVertical.hubCenter,
+            fieldWidth / 2.0 - Hub.width / 2.0 - RightBump.width / 2.0
+        );
     }
 
     /** Left Trench related constants */
