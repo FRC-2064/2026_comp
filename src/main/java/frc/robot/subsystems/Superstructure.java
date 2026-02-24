@@ -3,12 +3,14 @@ package frc.robot.subsystems;
 import static edu.wpi.first.units.Units.Milliseconds;
 import static edu.wpi.first.units.Units.Seconds;
 
+import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.collectionSubsystem.Indexer;
-import frc.robot.subsystems.collectionSubsystem.Intake;
-import frc.robot.subsystems.collectionSubsystem.Intake.IntakeState;
+import frc.robot.subsystems.collectionSubsystem.IntakeExtension;
+import frc.robot.subsystems.collectionSubsystem.IntakeRollers;
+import frc.robot.subsystems.drive.vision.Vision;
 import frc.robot.subsystems.shooterSubsystem.FlywheelSubsystem;
 import frc.robot.subsystems.shooterSubsystem.Hood;
 import frc.robot.subsystems.shooterSubsystem.ShooterConstants.FlyWheelConstants;
@@ -24,8 +26,7 @@ public class Superstructure extends SubsystemBase {
         INTAKE,
         SHOOT,
         SNOWBLOW,
-        OUTTAKE,
-        DEPLOYED
+        OUTTAKE
     }
 
     public enum State {
@@ -35,14 +36,14 @@ public class Superstructure extends SubsystemBase {
         SHOOTING_FEED,
         SNOWBLOW_SPINUP,
         SNOWBLOW_FEED,
-        OUTTAKING,
-        DEPLOYED
+        OUTTAKING
     }
 
     private DesiredState desiredState = DesiredState.STOW;
     private State currentState = State.STOWED;
 
-    private final Intake intake;
+    private final IntakeExtension extension;
+    private final IntakeRollers rollers;
     private final Indexer indexer;
 
     private final Hood hood;
@@ -50,30 +51,38 @@ public class Superstructure extends SubsystemBase {
     private final FlywheelSubsystem flywheel;
 
     private final ShooterCalc shooterCalc;
+    private final Vision vision;
 
-    private Time readyToShootTimer = Milliseconds.of(0);
-    private boolean wasReadyLastCycle = false;
+    private final Debouncer readyToShootDebouncer = new Debouncer(0.25);
 
     private double speedMult = 1.0;
 
     public Superstructure(
-        Intake intake,
+        IntakeExtension extension,
+        IntakeRollers rollers,
         Indexer indexer,
         Hood hood,
         Turret turret,
         FlywheelSubsystem flywheel,
-        ShooterCalc shooterCalc
+        ShooterCalc shooterCalc,
+        Vision vision
     ) {
-        this.intake = intake;
+        this.extension = extension;
+        this.rollers = rollers;
         this.indexer = indexer;
         this.hood = hood;
         this.turret = turret;
         this.flywheel = flywheel;
         this.shooterCalc = shooterCalc;
+        this.vision = vision;
     }
 
     public void setDesiredState(DesiredState state) {
         this.desiredState = state;
+    }
+
+    public void stowIntake() {
+        extension.stow();
     }
 
     public DesiredState getDesiredState() {
@@ -113,15 +122,9 @@ public class Superstructure extends SubsystemBase {
             case SNOWBLOW_FEED:
                 snowblow(solution);
                 break;
-            case DEPLOYED:
-                deployed();
         }
 
         updateTelemetry();
-    }
-
-    public boolean isReadyToFire() {
-        return isReadyToShoot();
     }
 
     public boolean isFeeding() {
@@ -141,7 +144,7 @@ public class Superstructure extends SubsystemBase {
 
     private void stow() {
         speedMult = 1.0;
-        intake.setDesiredState(IntakeState.STOWED);
+        rollers.stop();
         indexer.stop();
         flywheel.setTargetSpeed(FlyWheelConstants.MIN_VELOCITY);
         hood.setTargetAngle(HoodConstants.STARTING_POS);
@@ -149,29 +152,26 @@ public class Superstructure extends SubsystemBase {
 
     private void intake() {
         speedMult = 0.75;
-        intake.setDesiredState(IntakeState.INTAKE);
+        extension.extend();
+        rollers.intake();
         indexer.stop();
         flywheel.setTargetSpeed(FlyWheelConstants.MIN_VELOCITY);
         hood.setTargetAngle(HoodConstants.STARTING_POS);
-    }
-
-    private void deployed(){
-        indexer.stop();
-        flywheel.setTargetSpeed(FlyWheelConstants.MIN_VELOCITY);
-        hood.setTargetAngle(HoodConstants.STARTING_POS);
-        intake.setDesiredState(IntakeState.DEPLOYED);
     }
 
     private void outtake() {
         speedMult = 1.0;
-        intake.setDesiredState(IntakeState.OUTTAKE);
+        extension.extend();
+        rollers.outtake();
         indexer.outtake();
         flywheel.setTargetSpeed(FlyWheelConstants.MIN_VELOCITY);
     }
 
     private void shoot(ShooterSolution sol) {
         speedMult = 0.75;
-        intake.setDesiredState(IntakeState.STOWED);
+
+        extension.stow();
+        rollers.intake();
 
         flywheel.setTargetSpeed(sol.flywheelVelocity());
         hood.setTargetAngle(sol.hoodAngle());
@@ -185,7 +185,9 @@ public class Superstructure extends SubsystemBase {
 
     private void snowblow(ShooterSolution sol) {
         speedMult = 0.25;
-        intake.setDesiredState(IntakeState.INTAKE);
+
+        extension.extend();
+        rollers.intake();
 
         flywheel.setTargetSpeed(sol.flywheelVelocity());
         hood.setTargetAngle(sol.hoodAngle());
@@ -211,28 +213,16 @@ public class Superstructure extends SubsystemBase {
                 return isReadyToShoot()
                     ? State.SNOWBLOW_FEED
                     : State.SNOWBLOW_SPINUP;
-            case DEPLOYED:
-                return State.DEPLOYED;
+
+            case STOW:
             default:
                 return State.STOWED;
         }
     }
 
-    private boolean isReadyToShoot() {
-        var isReady =
-            flywheel.isUpToSpeed() && hood.atPosition() && turret.atPosition();
-        if (isReady && !wasReadyLastCycle) {
-            readyToShootTimer = Milliseconds.of(0);
-        } else if (isReady && !wasReadyLastCycle) {
-            readyToShootTimer.plus(Milliseconds.of(20));
-        } else {
-            readyToShootTimer = Milliseconds.zero();
-        }
-
-        wasReadyLastCycle = isReady;
-        return readyToShootTimer.gte(
-            SuperstructureConstants.READY_TO_SHOOT_DEBOUNCE_TIME
-        );
+    public boolean isReadyToShoot() {
+        boolean ready = flywheel.isUpToSpeed() && hood.atPosition() && turret.atPosition();
+        return readyToShootDebouncer.calculate(ready);
     }
 
     private void updateTelemetry() {
@@ -247,10 +237,6 @@ public class Superstructure extends SubsystemBase {
         SmartDashboard.putBoolean(
             "Superstructure/ReadyToShoot",
             isReadyToShoot()
-        );
-        SmartDashboard.putNumber(
-            "Superstructure/ReadyTimer",
-            readyToShootTimer.in(Seconds)
         );
         SmartDashboard.putBoolean(
             "Superstructure/FlywheelReady",

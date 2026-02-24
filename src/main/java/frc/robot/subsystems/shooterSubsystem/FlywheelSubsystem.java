@@ -1,7 +1,5 @@
 package frc.robot.subsystems.shooterSubsystem;
 
-import static edu.wpi.first.units.Units.RPM;
-
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.math.Pair;
@@ -51,7 +49,7 @@ public class FlywheelSubsystem extends SubsystemBase {
 
     private final FlyWheel flywheel = new FlyWheel(flywheelConfig);
 
-    private AngularVelocity targetSpeed = RPM.of(0);
+    private AngularVelocity targetSpeed = FlyWheelConstants.MIN_VELOCITY;
 
 public FlywheelSubsystem() {
         setDefaultCommand(flywheel.setSpeed(() -> this.targetSpeed));

@@ -2,7 +2,6 @@ package frc.robot.subsystems.shooterSubsystem;
 
 import static edu.wpi.first.units.Units.*;
 
-import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.measure.*;
@@ -21,7 +20,7 @@ public class ShooterConstants {
 
         public static final DCMotor MOTORS = DCMotor.getKrakenX60Foc(2);
         public static final Distance WHEEL_DIAMETER = Inches.of(4);
-        public static final Mass WHEEL_MASS = Pounds.of(4.15);
+        public static final Mass WHEEL_MASS = Pounds.of(5);
         public static final MechanismGearing GEARING = new MechanismGearing(1);
 
         public static final Current STATOR_LIMIT = Amps.of(40);
@@ -65,6 +64,8 @@ public class ShooterConstants {
 
     public static class TurretConstants {
 
+        public static final int ENCODER_13_ID = 50;
+        public static final int ENCODER_14_ID = 51;
         public static final int MOTOR_ID = 32;
         public static final DCMotor MOTOR_TYPE = DCMotor.getKrakenX44(1);
 
@@ -87,14 +88,8 @@ public class ShooterConstants {
         public static final AngularAcceleration MAX_ACCEL =
             DegreesPerSecondPerSecond.of(1800);
         public static final Current STATOR_LIMIT = Amps.of(60);
-    }
 
-    public static class KickerConstants {
-
-        public static final int KICKER_LEADER_ID = 45;
-        public static final int KICKER_FOLLOWER_ID = 46;
-
-        public static final double FEED_SPEED = 0.75;
-        public static final double OUTTAKE_SPEED = -0.5;
+        public static final Angle ENCODER_14_OFFSET = Rotations.of(0);
+        public static final Angle ENCODER_13_OFFSET = Rotations.of(0);
     }
 }
