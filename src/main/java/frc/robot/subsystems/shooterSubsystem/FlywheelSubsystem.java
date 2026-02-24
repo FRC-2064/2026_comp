@@ -1,7 +1,5 @@
 package frc.robot.subsystems.shooterSubsystem;
 
-import static edu.wpi.first.units.Units.RPM;
-
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.math.Pair;
@@ -27,23 +25,14 @@ public class FlywheelSubsystem extends SubsystemBase {
             .withClosedLoopController(
                     FlyWheelConstants.kP,
                     FlyWheelConstants.kI,
-                    FlyWheelConstants.kD,
-                    FlyWheelConstants.MAX_VEL_PROFILED,
-                    FlyWheelConstants.MAX_ACCEL_PROFILED)
-            .withFeedforward(FlyWheelConstants.FEEDFORWARD)
-            .withSimClosedLoopController(
-                    FlyWheelConstants.kP,
-                    FlyWheelConstants.kI,
-                    FlyWheelConstants.kD,
-                    FlyWheelConstants.MAX_VEL_PROFILED,
-                    FlyWheelConstants.MAX_ACCEL_PROFILED)
-            .withSimFeedforward(FlyWheelConstants.FEEDFORWARD)
+                    FlyWheelConstants.kD)
             .withGearing(FlyWheelConstants.GEARING)
             .withIdleMode(MotorMode.COAST)
             .withStatorCurrentLimit(FlyWheelConstants.STATOR_LIMIT)
             .withClosedLoopRampRate(FlyWheelConstants.RAMP_RATE)
             .withOpenLoopRampRate(FlyWheelConstants.RAMP_RATE)
             .withFollowers(new Pair<>(followerMotor, true))
+            .withMotorInverted(true)
             .withTelemetry("ShooterMotor", RobotConstants.GetTelemetry());
 
     private final SmartMotorController motor = new TalonFXWrapper(
@@ -60,7 +49,7 @@ public class FlywheelSubsystem extends SubsystemBase {
 
     private final FlyWheel flywheel = new FlyWheel(flywheelConfig);
 
-    private AngularVelocity targetSpeed = RPM.of(0);
+    private AngularVelocity targetSpeed = FlyWheelConstants.MIN_VELOCITY;
 
 public FlywheelSubsystem() {
         setDefaultCommand(flywheel.setSpeed(() -> this.targetSpeed));

@@ -4,30 +4,22 @@
 
 package frc.robot;
 
-import com.ctre.phoenix6.HootAutoReplay;
-
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 
 public class Robot extends TimedRobot {
-    private Command m_autonomousCommand;
+    private Command auto;
 
-    private final RobotContainer m_robotContainer;
-
-    /* log and replay timestamp and joystick data */
-    private final HootAutoReplay m_timeAndJoystickReplay = new HootAutoReplay()
-        .withTimestampReplay()
-        .withJoystickReplay();
+    private final RobotContainer robotContainer;
 
     public Robot() {
-        m_robotContainer = new RobotContainer();
+        robotContainer = new RobotContainer();
     }
 
     @Override
     public void robotPeriodic() {
-        m_timeAndJoystickReplay.update();
-        CommandScheduler.getInstance().run(); 
+        CommandScheduler.getInstance().run();
     }
 
     @Override
@@ -41,10 +33,10 @@ public class Robot extends TimedRobot {
 
     @Override
     public void autonomousInit() {
-        m_autonomousCommand = m_robotContainer.getAutonomousCommand();
+        auto = robotContainer.getAutonomousCommand();
 
-        if (m_autonomousCommand != null) {
-            CommandScheduler.getInstance().schedule(m_autonomousCommand);
+        if (auto != null) {
+            CommandScheduler.getInstance().schedule(auto);
         }
     }
 
@@ -56,8 +48,8 @@ public class Robot extends TimedRobot {
 
     @Override
     public void teleopInit() {
-        if (m_autonomousCommand != null) {
-            CommandScheduler.getInstance().cancel(m_autonomousCommand);
+        if (auto != null) {
+            CommandScheduler.getInstance().cancel(auto);
         }
     }
 

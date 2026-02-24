@@ -20,11 +20,11 @@ import yams.units.EasyCRT;
 import yams.units.EasyCRTConfig;
 
 public class Turret extends SubsystemBase {
+    private final TalonFX turretMotor = new TalonFX(TurretConstants.MOTOR_ID);
+    private final CANcoder throughBoreSmall = new CANcoder(TurretConstants.ENCODER_13_ID);
+    private final CANcoder throughBoreLarge = new CANcoder(TurretConstants.ENCODER_14_ID);
 
-    private CANcoder throughBoreSmall = new CANcoder(1);
-    private CANcoder throughBoreLarge = new CANcoder(2);
-
-    private EasyCRTConfig easyCRTConfig = new EasyCRTConfig(
+    private final EasyCRTConfig easyCRTConfig = new EasyCRTConfig(
         throughBoreSmall.getAbsolutePosition().asSupplier(),
         throughBoreLarge.getAbsolutePosition().asSupplier()
     )
@@ -33,13 +33,15 @@ public class Turret extends SubsystemBase {
             TurretConstants.MIN_ANGLE,
             TurretConstants.MAX_ANGLE
         )
-        .withAbsoluteEncoderOffsets(Rotations.of(0), Rotations.of(0))
+        .withAbsoluteEncoderOffsets(
+            TurretConstants.ENCODER_13_OFFSET,
+            TurretConstants.ENCODER_14_OFFSET)
         .withMatchTolerance(Rotations.of(0.06))
         .withAbsoluteEncoderInversions(false, false);
 
-    private EasyCRT solver = new EasyCRT(easyCRTConfig);
+    private final EasyCRT solver = new EasyCRT(easyCRTConfig);
 
-    private SmartMotorControllerConfig motorConfig =
+    private final SmartMotorControllerConfig motorConfig =
         new SmartMotorControllerConfig(this)
             .withControlMode(ControlMode.CLOSED_LOOP)
             .withClosedLoopController(
@@ -49,29 +51,18 @@ public class Turret extends SubsystemBase {
                 TurretConstants.MAX_VEL,
                 TurretConstants.MAX_ACCEL
             )
-            .withFeedforward(TurretConstants.FEEDFORWARD)
-            .withSimClosedLoopController(
-                TurretConstants.kP_SIM,
-                TurretConstants.kI_SIM, 
-                TurretConstants.kD_SIM, 
-                TurretConstants.MAX_VEL,
-                TurretConstants.MAX_ACCEL
-                )
-            .withSimFeedforward(TurretConstants.FEEDFORWARD_SIM)
             .withGearing(TurretConstants.GEARING)
             .withIdleMode(MotorMode.BRAKE)
             .withStatorCurrentLimit(TurretConstants.STATOR_LIMIT)
-            .withClosedLoopRampRate(TurretConstants.RAMP_RATE)
             .withTelemetry("TurretMotor", RobotConstants.GetTelemetry());
 
-    private final TalonFX turretMotor = new TalonFX(TurretConstants.MOTOR_ID);
     private final SmartMotorController motor = new TalonFXWrapper(
         turretMotor,
         TurretConstants.MOTOR_TYPE,
         motorConfig
     );
 
-    public PivotConfig turretConfig = new PivotConfig(motor)
+    private final PivotConfig turretConfig = new PivotConfig(motor)
         .withStartingPosition(TurretConstants.STARTING_POS)
         .withHardLimit(TurretConstants.MIN_ANGLE, TurretConstants.MAX_ANGLE)
         .withSoftLimits(Degrees.of(5), Degrees.of(350))

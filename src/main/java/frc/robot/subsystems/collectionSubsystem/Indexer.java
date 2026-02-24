@@ -1,62 +1,57 @@
 package frc.robot.subsystems.collectionSubsystem;
 
-import static edu.wpi.first.units.Units.Amps;
-
-import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.signals.InvertedValue;
-import com.ctre.phoenix6.signals.NeutralModeValue;
-import com.revrobotics.PersistMode;
-import com.revrobotics.ResetMode;
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
-import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
-import com.revrobotics.spark.config.SparkFlexConfig;
 
+import edu.wpi.first.math.Pair;
+import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.collectionSubsystem.CollectionConstants.IndexerConstants;
-import frc.robot.subsystems.shooterSubsystem.ShooterConstants.KickerConstants;
+import frc.robot.subsystems.collectionSubsystem.CollectionConstants.KickerConstants;
+import frc.robot.utils.RobotConstants;
+import yams.motorcontrollers.SmartMotorController;
+import yams.motorcontrollers.SmartMotorControllerConfig;
+import yams.motorcontrollers.SmartMotorControllerConfig.ControlMode;
+import yams.motorcontrollers.SmartMotorControllerConfig.MotorMode;
+import yams.motorcontrollers.local.SparkWrapper;
+import yams.motorcontrollers.remote.TalonFXWrapper;
 
 public class Indexer extends SubsystemBase {
-    private final TalonFX indexerMotor = new TalonFX(IndexerConstants.MOTOR_ID);
-    private final SparkFlex leader = new SparkFlex(KickerConstants.KICKER_LEADER_ID, MotorType.kBrushless);
-    private final SparkFlex follower = new SparkFlex(KickerConstants.KICKER_FOLLOWER_ID, MotorType.kBrushless);
+    private final TalonFX spindexerMotor = new TalonFX(IndexerConstants.MOTOR_ID);
+    private final SparkFlex leaderMotor = new SparkFlex(KickerConstants.KICKER_LEADER_ID, MotorType.kBrushless);
+    private final SparkFlex followerMotor = new SparkFlex(KickerConstants.KICKER_FOLLOWER_ID, MotorType.kBrushless);
 
-    private final SparkFlexConfig followerConfig = new SparkFlexConfig();
-    private final SparkFlexConfig leaderConfig = new SparkFlexConfig();
+    private final SmartMotorControllerConfig spindexerConfig = new SmartMotorControllerConfig(this)
+    .withControlMode(ControlMode.OPEN_LOOP)
+    .withStatorCurrentLimit(IndexerConstants.STATOR_LIMIT)
+    .withIdleMode(MotorMode.COAST)
+    .withMotorInverted(true)
+    .withTelemetry("SpindexerMotor", RobotConstants.GetTelemetry());
 
-    public Indexer() {
-        TalonFXConfiguration config = new TalonFXConfiguration();
-        config.CurrentLimits.StatorCurrentLimit = IndexerConstants.STATOR_LIMIT.in(Amps);
-        config.MotorOutput.NeutralMode = NeutralModeValue.Coast;
-        config.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
-        indexerMotor.getConfigurator().apply(config);
+    private final SmartMotorControllerConfig kickerConfig = new SmartMotorControllerConfig(this)
+    .withControlMode(ControlMode.OPEN_LOOP)
+    .withSupplyCurrentLimit(KickerConstants.CURRENT_LIMIT)
+    .withMotorInverted(true)
+    .withIdleMode(MotorMode.COAST)
+    .withFollowers(Pair.of(followerMotor, false))
+    .withTelemetry("KickerMotor", RobotConstants.GetTelemetry());
 
-        leaderConfig
-                .smartCurrentLimit(40)
-                .idleMode(IdleMode.kCoast);
-
-        followerConfig
-                .apply(leaderConfig)
-                .follow(leader, true);
-
-        leader.configure(leaderConfig, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
-        follower.configure(followerConfig, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
-
-    }
+    private final SmartMotorController spindexer = new TalonFXWrapper(spindexerMotor, DCMotor.getKrakenX44Foc(1), spindexerConfig);
+    private final SmartMotorController kicker = new SparkWrapper(leaderMotor, DCMotor.getNeoVortex(2), kickerConfig);
 
     public void feed() {
-        indexerMotor.set(IndexerConstants.FEED_SPEED);
-        leader.set(KickerConstants.FEED_SPEED);
+        kicker.setDutyCycle(KickerConstants.FEED);
+        spindexer.setDutyCycle(IndexerConstants.FEED);
     }
 
     public void outtake() {
-        indexerMotor.set(IndexerConstants.OUTTAKE_SPEED);
-        leader.set(KickerConstants.OUTTAKE_SPEED);
+        kicker.setDutyCycle(KickerConstants.OUTTAKE);
+        spindexer.setDutyCycle(IndexerConstants.OUTTAKE);
     }
 
     public void stop() {
-        indexerMotor.stopMotor();
-        leader.stopMotor();
+        kicker.setDutyCycle(0);
+        spindexer.setDutyCycle(0);
     }
 }

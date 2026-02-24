@@ -5,25 +5,22 @@
 package frc.robot;
 
 import static edu.wpi.first.units.Units.MetersPerSecond;
-import static edu.wpi.first.units.Units.RadiansPerSecond;
-import static edu.wpi.first.units.Units.RotationsPerSecond;
 
-import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.ctre.phoenix6.swerve.SwerveRequest;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.commands.TeleopDrive;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.Superstructure;
 import frc.robot.subsystems.Superstructure.DesiredState;
 import frc.robot.subsystems.collectionSubsystem.Indexer;
-import frc.robot.subsystems.collectionSubsystem.Intake;
+import frc.robot.subsystems.collectionSubsystem.IntakeExtension;
+import frc.robot.subsystems.collectionSubsystem.IntakeRollers;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 import frc.robot.subsystems.drive.vision.Vision;
 import frc.robot.subsystems.shooterSubsystem.FlywheelSubsystem;
@@ -38,7 +35,8 @@ public class RobotContainer {
     private final Turret turret = new Turret();
     private final Hood hood = new Hood();
     private final FlywheelSubsystem flywheel = new FlywheelSubsystem();
-    private final Intake intake = new Intake();
+    private final IntakeExtension extension = new IntakeExtension();
+    private final IntakeRollers rollers = new IntakeRollers();
     private final Indexer indexer = new Indexer();
 
     public final CommandSwerveDrivetrain drivetrain =
@@ -46,12 +44,14 @@ public class RobotContainer {
     private final ShooterCalc calc = new ShooterCalc(drivetrain);
     private final Vision vision = new Vision(drivetrain);
     private final Superstructure superstructure = new Superstructure(
-        intake,
+        extension,
+        rollers,
         indexer,
         hood,
         turret,
         flywheel,
-        calc
+        calc,
+        vision
     );
 
     private final double MaxSpeed =
@@ -60,8 +60,6 @@ public class RobotContainer {
 
     private final SwerveRequest.SwerveDriveBrake brake =
         new SwerveRequest.SwerveDriveBrake();
-    private final SwerveRequest.PointWheelsAt point =
-        new SwerveRequest.PointWheelsAt();
 
     private final Telemetry logger = new Telemetry(MaxSpeed);
     private final CommandXboxController driverController = new CommandXboxController(0);
@@ -69,18 +67,25 @@ public class RobotContainer {
     private final TeleopDrive drive = new TeleopDrive(drivetrain, superstructure, driverController);
 
     public RobotContainer() {
-        NamedCommands.registerCommand("intake", new RunCommand(() -> superstructure.setDesiredState(DesiredState.INTAKE)));
-        NamedCommands.registerCommand("shoot", new RunCommand(() -> superstructure.setDesiredState(DesiredState.SHOOT)));
-        NamedCommands.registerCommand("snowblow", new RunCommand(() -> superstructure.setDesiredState(DesiredState.SNOWBLOW)));
-        NamedCommands.registerCommand("stow", new RunCommand(() -> superstructure.setDesiredState(DesiredState.STOW)));
+        NamedCommands.registerCommand("intake", new RunCommand(() -> superstructure.setDesiredState(DesiredState.INTAKE), superstructure));
+        NamedCommands.registerCommand("shoot", new RunCommand(() -> superstructure.setDesiredState(DesiredState.SHOOT), superstructure));
+        NamedCommands.registerCommand("snowblow", new RunCommand(() -> superstructure.setDesiredState(DesiredState.SNOWBLOW), superstructure));
+        NamedCommands.registerCommand("stow", new RunCommand(() -> superstructure.setDesiredState(DesiredState.STOW), superstructure));
+        NamedCommands.registerCommand("retract intake", new InstantCommand(superstructure::stowIntake));
 
         configureBindings();
     }
 
     private void configureBindings() {
-        final var leftTrigger = driverXbox.leftTrigger();
-        final var rightTrigger = driverXbox.rightTrigger();
-        final var leftBumper = driverXbox.leftBumper();
+        final var leftTrigger = driverXbox.leftTrigger();   // intake
+        final var rightTrigger = driverXbox.rightTrigger(); // shoot
+        final var leftBumper = driverXbox.leftBumper();     // outtake
+
+        final var back = driverXbox.back(); // toggle drive assist
+        final var x = driverXbox.x();      // lock
+        final var a = driverXbox.a();      // stow intake
+
+        // TRIGGERS
 
         leftTrigger
             .and(rightTrigger)
@@ -112,6 +117,15 @@ public class RobotContainer {
             )
         );
 
+        // BUTTONS
+
+        back.onTrue(drive.toggleZoneAssist());
+        x.whileTrue(drivetrain.applyRequest(() -> brake));
+        a.onTrue(new InstantCommand(superstructure::stowIntake));
+
+
+        // DEFAULT COMMANDS
+
         superstructure.setDefaultCommand(
             new RunCommand(
                 () -> superstructure.setDesiredState(DesiredState.STOW),
@@ -121,53 +135,10 @@ public class RobotContainer {
 
         drivetrain.setDefaultCommand(drive);
 
-
-        // Idle while the robot is disabled. This ensures the configured
-        // neutral mode is applied to the drive motors while disabled.
         final var idle = new SwerveRequest.Idle();
         RobotModeTriggers.disabled().whileTrue(
             drivetrain.applyRequest(() -> idle).ignoringDisable(true)
         );
-
-        driverController.a().whileTrue(drivetrain.applyRequest(() -> brake));
-        driverController
-            .b()
-            .whileTrue(
-                drivetrain.applyRequest(() ->
-                    point.withModuleDirection(
-                        new Rotation2d(
-                            -driverController.getLeftY(),
-                            -driverController.getLeftX()
-                        )
-                    )
-                )
-            );
-
-            driverController.back().onTrue(drive.toggleZoneAssist());
-
-        // Run SysId routines when holding back/start and X/Y.
-        // Note that each routine should be run exactly once in a single log.
-        driverController
-            .back()
-            .and(driverController.y())
-            .whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
-        driverController
-            .back()
-            .and(driverController.x())
-            .whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
-        driverController
-            .start()
-            .and(driverController.y())
-            .whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
-        driverController
-            .start()
-            .and(driverController.x())
-            .whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
-
-        // Reset the field-centric heading on left bumper press.
-        driverController
-            .leftBumper()
-            .onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
 
         drivetrain.registerTelemetry(logger::telemeterize);
     }
