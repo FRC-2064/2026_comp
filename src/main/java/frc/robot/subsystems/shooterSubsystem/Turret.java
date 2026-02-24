@@ -49,19 +49,9 @@ public class Turret extends SubsystemBase {
                 TurretConstants.MAX_VEL,
                 TurretConstants.MAX_ACCEL
             )
-            .withFeedforward(TurretConstants.FEEDFORWARD)
-            .withSimClosedLoopController(
-                TurretConstants.kP_SIM,
-                TurretConstants.kI_SIM, 
-                TurretConstants.kD_SIM, 
-                TurretConstants.MAX_VEL,
-                TurretConstants.MAX_ACCEL
-                )
-            .withSimFeedforward(TurretConstants.FEEDFORWARD_SIM)
             .withGearing(TurretConstants.GEARING)
             .withIdleMode(MotorMode.BRAKE)
             .withStatorCurrentLimit(TurretConstants.STATOR_LIMIT)
-            .withClosedLoopRampRate(TurretConstants.RAMP_RATE)
             .withTelemetry("TurretMotor", RobotConstants.GetTelemetry());
 
     private final TalonFX turretMotor = new TalonFX(TurretConstants.MOTOR_ID);

@@ -34,11 +34,12 @@ public class Indexer extends SubsystemBase {
 
         leaderConfig
                 .smartCurrentLimit(40)
+                .inverted(true)
                 .idleMode(IdleMode.kCoast);
 
         followerConfig
                 .apply(leaderConfig)
-                .follow(leader, true);
+                .follow(leader, false);
 
         leader.configure(leaderConfig, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
         follower.configure(followerConfig, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);

@@ -27,23 +27,14 @@ public class FlywheelSubsystem extends SubsystemBase {
             .withClosedLoopController(
                     FlyWheelConstants.kP,
                     FlyWheelConstants.kI,
-                    FlyWheelConstants.kD,
-                    FlyWheelConstants.MAX_VEL_PROFILED,
-                    FlyWheelConstants.MAX_ACCEL_PROFILED)
-            .withFeedforward(FlyWheelConstants.FEEDFORWARD)
-            .withSimClosedLoopController(
-                    FlyWheelConstants.kP,
-                    FlyWheelConstants.kI,
-                    FlyWheelConstants.kD,
-                    FlyWheelConstants.MAX_VEL_PROFILED,
-                    FlyWheelConstants.MAX_ACCEL_PROFILED)
-            .withSimFeedforward(FlyWheelConstants.FEEDFORWARD)
+                    FlyWheelConstants.kD)
             .withGearing(FlyWheelConstants.GEARING)
             .withIdleMode(MotorMode.COAST)
             .withStatorCurrentLimit(FlyWheelConstants.STATOR_LIMIT)
             .withClosedLoopRampRate(FlyWheelConstants.RAMP_RATE)
             .withOpenLoopRampRate(FlyWheelConstants.RAMP_RATE)
             .withFollowers(new Pair<>(followerMotor, true))
+            .withMotorInverted(true)
             .withTelemetry("ShooterMotor", RobotConstants.GetTelemetry());
 
     private final SmartMotorController motor = new TalonFXWrapper(
