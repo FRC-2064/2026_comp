@@ -6,6 +6,8 @@ import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 import frc.robot.subsystems.drive.vision.VisionCamera.MeasurementConsumer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+
 import org.photonvision.simulation.PhotonCameraSim;
 import org.photonvision.simulation.SimCameraProperties;
 import org.photonvision.simulation.VisionSystemSim;
@@ -63,7 +65,7 @@ public class Vision extends SubsystemBase {
         cameras.add(
             new LLCamera.LLCameraConfig(VisionConstants.LIMELIGHT_NAME)
                 .withTransform(VisionConstants.ROBOT_TO_LIMELIGHT_CAM)
-                .setEnabled(VisionConstants.ENABLE_LIMLELIGHT_CAMERA)
+                .setEnabled(VisionConstants.ENABLE_LIMELIGHT_CAMERA)
                 .withMegaTag2(VisionConstants.USE_MGT2)
                 .withMeasurementConsumer(consumer)
                 .build()
@@ -126,18 +128,14 @@ public class Vision extends SubsystemBase {
         return (int) cameras.stream().filter(VisionCamera::isEnabled).count();
     }
 
-    public VisionCamera getCamera(String name) {
+    public Optional<VisionCamera> getCamera(String name) {
         return cameras
             .stream()
             .filter(cam -> cam.getName().equals(name))
-            .findFirst()
-            .orElse(null);
+            .findFirst();
     }
 
     public void setCameraEnabled(String name, boolean enabled) {
-        VisionCamera camera = getCamera(name);
-        if (camera != null) {
-            camera.setEnabled(enabled);
-        }
+        getCamera(name).ifPresent(cam -> cam.setEnabled(enabled));
     }
 }

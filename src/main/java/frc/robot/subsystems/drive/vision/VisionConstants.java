@@ -60,8 +60,6 @@ public class VisionConstants {
 
     public static final double MAX_POSE_AMBIGUITY = 0.2;
 
-    public static final double REFERENCE_DISTANCE = 4.0;
-
     public static final double MAX_DETECTION_DISTANCE = 6.0;
 
     public static final int MIN_TAG_COUNT = 1;
@@ -71,7 +69,7 @@ public class VisionConstants {
     public static final boolean ENABLE_LEFT_CAMERA = true;
     public static final boolean ENABLE_RIGHT_CAMERA = true;
     public static final boolean ENABLE_CENTER_CAMERA = true;
-    public static final boolean ENABLE_LIMLELIGHT_CAMERA = true;
+    public static final boolean ENABLE_LIMELIGHT_CAMERA = true;
 
     public static final int SIM_CAMERA_WIDTH = 960;
     public static final int SIM_CAMERA_HEIGHT = 720;

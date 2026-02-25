@@ -84,7 +84,8 @@ public class Hood extends SubsystemBase {
     public Command home() {
         return Commands.run(
             () -> hood.setVoltage(Volts.of(-5)), this)
-        .until(this::atHardStop);
+        .until(this::atHardStop)
+        .andThen(() -> motor.setEncoderPosition(HoodConstants.MIN_ANGLE));
     }
 
     @Override

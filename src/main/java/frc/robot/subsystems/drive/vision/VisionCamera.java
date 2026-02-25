@@ -39,7 +39,10 @@ public interface VisionCamera {
         }
 
         public boolean isValid() {
-            return stdDevs != null && stdDevs.get(0, 0) != Double.MAX_VALUE;
+            return pose != null &&
+                timestampSeconds > 0 &&
+                stdDevs != null &&
+                stdDevs.get(0, 0) != Double.MAX_VALUE;
         }
     }
 

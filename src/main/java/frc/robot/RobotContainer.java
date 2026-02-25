@@ -62,9 +62,7 @@ public class RobotContainer {
         new SwerveRequest.SwerveDriveBrake();
 
     private final Telemetry logger = new Telemetry(MaxSpeed);
-    private final CommandXboxController driverController = new CommandXboxController(0);
-
-    private final TeleopDrive drive = new TeleopDrive(drivetrain, superstructure, driverController);
+    private final TeleopDrive drive = new TeleopDrive(drivetrain, superstructure, driverXbox);
 
     public RobotContainer() {
         NamedCommands.registerCommand("intake", new RunCommand(() -> superstructure.setDesiredState(DesiredState.INTAKE), superstructure));
@@ -81,9 +79,10 @@ public class RobotContainer {
         final var rightTrigger = driverXbox.rightTrigger(); // shoot
         final var leftBumper = driverXbox.leftBumper();     // outtake
 
-        final var back = driverXbox.back(); // toggle drive assist
-        final var x = driverXbox.x();      // lock
-        final var a = driverXbox.a();      // stow intake
+        final var back = driverXbox.back();   // toggle drive assist
+        final var start = driverXbox.start(); // home hood TESTING ONLY
+        final var x = driverXbox.x();         // lock
+        final var a = driverXbox.a();         // stow intake
 
         // TRIGGERS
 
@@ -120,6 +119,7 @@ public class RobotContainer {
         // BUTTONS
 
         back.onTrue(drive.toggleZoneAssist());
+        start.onTrue(hood.home());
         x.whileTrue(drivetrain.applyRequest(() -> brake));
         a.onTrue(new InstantCommand(superstructure::stowIntake));
 

@@ -20,7 +20,7 @@ public class PVCamera implements VisionCamera {
     private final PhotonCamera camera;
     private final PhotonPoseEstimator poseEstimator;
     private final MeasurementConsumer consumer;
-    private final Transform3d cameraPostion;
+    private final Transform3d cameraPosition;
     private boolean enabled;
     private Matrix<N3, N1> curStdDevs;
 
@@ -31,7 +31,7 @@ public class PVCamera implements VisionCamera {
         this.consumer = config.measurementConsumer;
         this.curStdDevs = VisionConstants.SINGLE_TAG_STD_DEVS;
 
-        this.cameraPostion = config.robotToCamera;
+        this.cameraPosition = config.robotToCamera;
 
         this.poseEstimator = new PhotonPoseEstimator(
             FieldConstants.defaultAprilTagType.getLayout(),
@@ -49,9 +49,7 @@ public class PVCamera implements VisionCamera {
     }
 
     private void processResult(PhotonPipelineResult result) {
-        Optional<EstimatedRobotPose> visionEst = Optional.empty();
-
-        visionEst = poseEstimator.estimateCoprocMultiTagPose(result);
+        var visionEst = poseEstimator.estimateCoprocMultiTagPose(result);
 
         if (visionEst.isEmpty() && VisionConstants.USE_MULTI_TAG_FALLBACK) {
             visionEst = poseEstimator.estimateLowestAmbiguityPose(result);
@@ -91,27 +89,15 @@ public class PVCamera implements VisionCamera {
             return;
         }
 
-        var estStdDevs = VisionConstants.SINGLE_TAG_STD_DEVS;
         int numTags = 0;
-        double avgDist = 0;
+        double avgDist = calculateAverageDistance(
+            estimatedPose.get(), targets);
+
 
         for (var t : targets) {
-            var tagPose = poseEstimator
-                .getFieldTags()
-                .getTagPose(t.getFiducialId());
-            if (tagPose.isEmpty()) continue;
-
-            numTags++;
-            avgDist += tagPose
-                .get()
-                .toPose2d()
-                .getTranslation()
-                .getDistance(
-                    estimatedPose
-                        .get()
-                        .estimatedPose.toPose2d()
-                        .getTranslation()
-                );
+            if (poseEstimator.getFieldTags().getTagPose(t.getFiducialId()).isPresent()) {
+                numTags++;
+            }
         }
 
         if (numTags == 0) {
@@ -119,23 +105,18 @@ public class PVCamera implements VisionCamera {
             return;
         }
 
-        avgDist /= numTags;
+        var estStdDevs = numTags > 1
+            ? VisionConstants.MULTI_TAG_STD_DEVS
+            : VisionConstants.SINGLE_TAG_STD_DEVS;
 
-        if (numTags > 1) {
-            estStdDevs = VisionConstants.MULTI_TAG_STD_DEVS;
-        }
 
-        if (numTags == 1 && avgDist > VisionConstants.MAX_DETECTION_DISTANCE) {
-            estStdDevs = VecBuilder.fill(
-                Double.MAX_VALUE,
-                Double.MAX_VALUE,
-                Double.MAX_VALUE
-            );
-        } else {
-            estStdDevs = estStdDevs.times(1 + ((avgDist * avgDist) / 30));
-        }
+            if (numTags == 1 && avgDist > VisionConstants.MAX_DETECTION_DISTANCE) {
+                estStdDevs = VecBuilder.fill(Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE);
+            } else {
+                estStdDevs = estStdDevs.times(1 + ((avgDist * avgDist) / 30));
+            }
 
-        curStdDevs = estStdDevs;
+            curStdDevs = estStdDevs;
     }
 
     private double calculateAverageDistance(
@@ -189,7 +170,7 @@ public class PVCamera implements VisionCamera {
     }
 
     public Transform3d getPosition() {
-        return cameraPostion;
+        return cameraPosition;
     }
 
     public static class PVCameraConfig {
