@@ -63,7 +63,7 @@ public class LLCamera implements VisionCamera {
         double avgDist = estimate.avgTagDist;
 
         Matrix<N3, N1> estStdDevs =
-            numTags > 2
+            numTags > 1
                 ? VisionConstants.MULTI_TAG_STD_DEVS
                 : VisionConstants.SINGLE_TAG_STD_DEVS;
 

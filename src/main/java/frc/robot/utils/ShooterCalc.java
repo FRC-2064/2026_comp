@@ -104,10 +104,18 @@ public class ShooterCalc {
         var state = drive.getState();
         Pose2d pose = state.Pose;
 
-        Translation2d robotVel = new Translation2d(
-            state.Speeds.vxMetersPerSecond,
-            state.Speeds.vyMetersPerSecond
-        ).rotateBy(pose.getRotation());
+        Translation2d turretOffset = ShooterConstants.ROBOT_CENTER_TO_SHOOTER.toTranslation2d();
+        double omega = state.Speeds.omegaRadiansPerSecond;
+
+        double tanVelX = -omega * turretOffset.getY();
+        double tanVelY = -omega * turretOffset.getX();
+
+        Translation2d robotRelativeTurretVel = new Translation2d(
+            state.Speeds.vxMetersPerSecond + tanVelX,
+            state.Speeds.vyMetersPerSecond + tanVelY
+        );
+
+        Translation2d robotVel = robotRelativeTurretVel.rotateBy(pose.getRotation());
 
         Translation2d latencyOffset = robotVel.times(LATENCY);
         Translation2d turretPos = pose.getTranslation().plus(latencyOffset);
