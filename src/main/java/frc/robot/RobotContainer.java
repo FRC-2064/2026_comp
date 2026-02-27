@@ -4,6 +4,7 @@
 
 package frc.robot;
 
+import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 
 import com.pathplanner.lib.auto.NamedCommands;
@@ -31,6 +32,7 @@ import frc.robot.utils.ShooterCalc;
 public class RobotContainer {
 
     final CommandXboxController driverXbox = new CommandXboxController(0);
+    final CommandXboxController operatorXbox = new CommandXboxController(1);
 
     private final Turret turret = new Turret();
     private final Hood hood = new Hood();
@@ -38,11 +40,12 @@ public class RobotContainer {
     private final IntakeExtension extension = new IntakeExtension();
     private final IntakeRollers rollers = new IntakeRollers();
     private final Indexer indexer = new Indexer();
-
-    public final CommandSwerveDrivetrain drivetrain =
+    private final CommandSwerveDrivetrain drivetrain =
         TunerConstants.createDrivetrain();
+
     private final ShooterCalc calc = new ShooterCalc(drivetrain);
     private final Vision vision = new Vision(drivetrain);
+
     private final Superstructure superstructure = new Superstructure(
         extension,
         rollers,
@@ -51,7 +54,8 @@ public class RobotContainer {
         turret,
         flywheel,
         calc,
-        vision
+        vision,
+        () -> operatorXbox.getLeftX()
     );
 
     private final double MaxSpeed =
@@ -68,7 +72,7 @@ public class RobotContainer {
         NamedCommands.registerCommand("intake", new RunCommand(() -> superstructure.setDesiredState(DesiredState.INTAKE), superstructure));
         NamedCommands.registerCommand("shoot", new RunCommand(() -> superstructure.setDesiredState(DesiredState.SHOOT), superstructure));
         NamedCommands.registerCommand("snowblow", new RunCommand(() -> superstructure.setDesiredState(DesiredState.SNOWBLOW), superstructure));
-        NamedCommands.registerCommand("stow", new RunCommand(() -> superstructure.setDesiredState(DesiredState.STOW), superstructure));
+        NamedCommands.registerCommand("stow", new RunCommand(() -> superstructure.setDesiredState(DesiredState.IDLE), superstructure));
         NamedCommands.registerCommand("retract intake", new InstantCommand(superstructure::stowIntake));
 
         configureBindings();
@@ -83,6 +87,11 @@ public class RobotContainer {
         final var start = driverXbox.start(); // home hood TESTING ONLY
         final var x = driverXbox.x();         // lock
         final var a = driverXbox.a();         // stow intake
+
+        final var oa = operatorXbox.a(); // toggle manual turret manual override
+        final var ob = operatorXbox.b(); // manual turret setpoint: 270
+        final var ox = operatorXbox.x(); // manual turret setpoint: 90
+        final var oy = operatorXbox.y(); // manual turret setpoint: 0
 
         // TRIGGERS
 
@@ -124,11 +133,18 @@ public class RobotContainer {
         a.onTrue(new InstantCommand(superstructure::stowIntake));
 
 
+        // OPERATOR OVERRIDES
+        oa.onTrue(new InstantCommand(superstructure::toggleTurretMode));
+        oy.onTrue(new InstantCommand(() -> superstructure.setTurretSetpoint(Degrees.of(0))));
+        ox.onTrue(new InstantCommand(() -> superstructure.setTurretSetpoint(Degrees.of(90))));
+        ob.onTrue(new InstantCommand(() -> superstructure.setTurretSetpoint(Degrees.of(270))));
+
+
         // DEFAULT COMMANDS
 
         superstructure.setDefaultCommand(
             new RunCommand(
-                () -> superstructure.setDesiredState(DesiredState.STOW),
+                () -> superstructure.setDesiredState(DesiredState.IDLE),
                 superstructure
             )
         );

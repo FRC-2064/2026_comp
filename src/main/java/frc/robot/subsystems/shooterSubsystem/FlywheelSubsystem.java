@@ -1,9 +1,14 @@
 package frc.robot.subsystems.shooterSubsystem;
 
+import static edu.wpi.first.units.Units.RPM;
+
+import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.math.Pair;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.shooterSubsystem.ShooterConstants.FlyWheelConstants;
 import frc.robot.utils.RobotConstants;
@@ -51,12 +56,33 @@ public class FlywheelSubsystem extends SubsystemBase {
 
     private AngularVelocity targetSpeed = FlyWheelConstants.MIN_VELOCITY;
 
-public FlywheelSubsystem() {
-        setDefaultCommand(flywheel.setSpeed(() -> this.targetSpeed));
+    public FlywheelSubsystem() {
+        setDefaultCommand(buildFlywheelDefault());
+    }
+
+    private Command buildFlywheelDefault() {
+        return flywheel.setSpeed(() -> this.targetSpeed)
+        .onlyWhile(this::shouldSpin)
+        .andThen(Commands.runOnce(this::coastOut))
+        .andThen(Commands.waitUntil(this::shouldSpin))
+        .repeatedly()
+        .withName("FlywheelDefault");
+    }
+
+    private boolean shouldSpin() {
+        return Math.abs(this.targetSpeed.in(RPM)) >= 100;
+    }
+
+    private void coastOut() {
+        flywheelMotor.setControl(new DutyCycleOut(0));
     }
 
     public void setTargetSpeed(AngularVelocity speed) {
         this.targetSpeed = speed;
+    }
+
+    public void stop() {
+        this.targetSpeed = FlyWheelConstants.MIN_VELOCITY;
     }
 
     public boolean isUpToSpeed() {

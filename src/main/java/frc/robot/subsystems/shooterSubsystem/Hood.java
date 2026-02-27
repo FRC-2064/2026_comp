@@ -65,6 +65,10 @@ public class Hood extends SubsystemBase {
         this.targetAngle = angle;
     }
 
+    public void down() {
+        this.targetAngle = HoodConstants.MIN_ANGLE;
+    }
+
     public Angle getTargetAngle() {
         return targetAngle;
     }
