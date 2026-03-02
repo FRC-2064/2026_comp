@@ -17,7 +17,8 @@ public class IntakeRollers extends SubsystemBase {
     private final SmartMotorControllerConfig motorConfig = new SmartMotorControllerConfig(this)
     .withControlMode(ControlMode.OPEN_LOOP)
     .withStatorCurrentLimit(IntakeRollerConstants.STATOR_LIMIT)
-    .withMotorInverted(true)
+    .withMotorInverted(false)
+    .withGearing(1)
     .withTelemetry("RollerMotor", RobotConstants.GetTelemetry());
 
     private final SmartMotorController roller = new TalonFXWrapper(rollerMotor, DCMotor.getKrakenX60Foc(1), motorConfig);

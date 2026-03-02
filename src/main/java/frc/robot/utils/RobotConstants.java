@@ -5,6 +5,8 @@ import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.MetersPerSecondPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 
+import com.ctre.phoenix6.CANBus;
+
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearAcceleration;
@@ -54,4 +56,6 @@ public class RobotConstants {
         public static final double MANUAL_TURRET_DEADBAND = 0.1;
         public static final Angle MANUAL_TURRET_RATE = Degrees.of(3);
     }
+
+    public static final CANBus CANIVORE = new CANBus("Comp");
 }

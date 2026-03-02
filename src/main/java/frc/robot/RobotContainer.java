@@ -34,27 +34,27 @@ public class RobotContainer {
     final CommandXboxController driverXbox = new CommandXboxController(0);
     final CommandXboxController operatorXbox = new CommandXboxController(1);
 
-    private final Turret turret = new Turret();
+    // private final Turret turret = new Turret();
     private final Hood hood = new Hood();
     private final FlywheelSubsystem flywheel = new FlywheelSubsystem();
-    private final IntakeExtension extension = new IntakeExtension();
+    //private final IntakeExtension extension = new IntakeExtension();
     private final IntakeRollers rollers = new IntakeRollers();
     private final Indexer indexer = new Indexer();
     private final CommandSwerveDrivetrain drivetrain =
-        TunerConstants.createDrivetrain();
+    TunerConstants.createDrivetrain();
 
-    private final ShooterCalc calc = new ShooterCalc(drivetrain);
-    private final Vision vision = new Vision(drivetrain);
+    // private final ShooterCalc calc = new ShooterCalc(drivetrain);
+    // private final Vision vision = new Vision(drivetrain);
 
     private final Superstructure superstructure = new Superstructure(
-        extension,
+        //extension,
         rollers,
         indexer,
         hood,
-        turret,
+        // turret,
         flywheel,
-        calc,
-        vision,
+        // calc,
+        // vision,
         () -> operatorXbox.getLeftX()
     );
 
@@ -70,10 +70,9 @@ public class RobotContainer {
 
     public RobotContainer() {
         NamedCommands.registerCommand("intake", new RunCommand(() -> superstructure.setDesiredState(DesiredState.INTAKE), superstructure));
-        NamedCommands.registerCommand("shoot", new RunCommand(() -> superstructure.setDesiredState(DesiredState.SHOOT), superstructure));
         NamedCommands.registerCommand("snowblow", new RunCommand(() -> superstructure.setDesiredState(DesiredState.SNOWBLOW), superstructure));
         NamedCommands.registerCommand("stow", new RunCommand(() -> superstructure.setDesiredState(DesiredState.IDLE), superstructure));
-        NamedCommands.registerCommand("retract intake", new InstantCommand(superstructure::stowIntake));
+        // NamedCommands.registerCommand("retract intake", new InstantCommand(superstructure::stowIntake));
 
         configureBindings();
     }
@@ -87,6 +86,7 @@ public class RobotContainer {
         final var start = driverXbox.start(); // home hood TESTING ONLY
         final var x = driverXbox.x();         // lock
         final var a = driverXbox.a();         // stow intake
+        final var b = driverXbox.b();
 
         final var oa = operatorXbox.a(); // toggle manual turret manual override
         final var ob = operatorXbox.b(); // manual turret setpoint: 270
@@ -127,8 +127,11 @@ public class RobotContainer {
 
         // BUTTONS
 
-        back.onTrue(drive.toggleZoneAssist());
-        start.onTrue(hood.home());
+        //back.onTrue(new InstantCommand( () -> extension.setMotorZero()));
+        // a.onTrue(new InstantCommand(extension::extend));
+        // b.onTrue(new InstantCommand(extension::stow));
+        x.onTrue(new InstantCommand(indexer::stop));
+        start.onTrue(new InstantCommand(hood::home));
         x.whileTrue(drivetrain.applyRequest(() -> brake));
         a.onTrue(new InstantCommand(superstructure::stowIntake));
 

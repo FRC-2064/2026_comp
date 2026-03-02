@@ -11,9 +11,9 @@ public class CollectionConstants {
     public static class IntakeRollerConstants {
         public static final int ROLLER_ID = 33;
 
-        public static final double INTAKE = 1.0;
-        public static final double OUTTAKE = -1.0;
-        public static final Current STATOR_LIMIT = Amps.of(40);
+        public static final double INTAKE = 0.25;
+        public static final double OUTTAKE = -0.25;
+        public static final Current STATOR_LIMIT = Amps.of(60);
     }
 
     public static class IntakeConstants {
@@ -22,7 +22,7 @@ public class CollectionConstants {
         public static final DCMotor MOTOR_TYPE = DCMotor.getKrakenX44(1);
         public static final MechanismGearing RACK_GEARING = new MechanismGearing(GearBox.fromReductionStages(3, 4));
         public static final Mass MOI_MASS = Pounds.of(4);
-        public static final double kP = 4.0;
+        public static final double kP = 1000;
         public static final double kI = 0.0;
         public static final double kD = 0.0;
 
@@ -30,7 +30,7 @@ public class CollectionConstants {
         public static final AngularAcceleration MAX_ACCEL = DegreesPerSecondPerSecond.of(90);
         public static final Current STATOR_LIMIT = Amps.of(40);
 
-        public static final Distance STOW_HEIGHT = Meters.of(0);
+        public static final Distance STOW_HEIGHT = Inches.zero();
         public static final Distance INTAKE_HEIGHT = Inches.of(10.018);
     }
 
