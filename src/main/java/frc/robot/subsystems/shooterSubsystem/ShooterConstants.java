@@ -23,15 +23,14 @@ public class ShooterConstants {
         public static final Mass WHEEL_MASS = Pounds.of(5);
         public static final MechanismGearing GEARING = new MechanismGearing(1);
 
-        public static final Current STATOR_LIMIT = Amps.of(40);
+        public static final Current STATOR_LIMIT = Amps.of(100);
         public static final AngularVelocity MIN_VELOCITY = RPM.of(0);
         public static final AngularVelocity MAX_VELOCITY = RPM.of(6000);
-        public static final AngularVelocity TOLERANCE = RPM.of(90);
-        public static final Time RAMP_RATE = Seconds.of(0.25);
+        public static final AngularVelocity TOLERANCE = RPM.of(200);
 
-        public static final double kP = 25.0;
+        public static final double kP = 1.0;
         public static final double kI = 0.0;
-        public static final double kD = 75.0;
+        public static final double kD = 0.0;
     }
 
     public static class HoodConstants {

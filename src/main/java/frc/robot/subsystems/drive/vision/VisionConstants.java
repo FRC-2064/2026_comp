@@ -35,8 +35,8 @@ public class VisionConstants {
     );
 
     public static final Transform3d ROBOT_TO_CENTER_CAM = new Transform3d(
-        new Translation3d(Inches.of(-10.500000), Inches.of(11.500000), Inches.of(8.000000)),
-        new Rotation3d(Degrees.of(0), Degrees.of(-20), Degrees.of(30))
+        new Translation3d(Inches.of(-12.555), Inches.of(1.452), Inches.of(11.337)),
+        new Rotation3d(Degrees.of(0), Degrees.of(10), Degrees.of(180))
     );
 
     public static final Transform3d ROBOT_TO_LIMELIGHT_CAM = new Transform3d(

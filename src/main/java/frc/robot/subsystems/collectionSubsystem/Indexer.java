@@ -1,8 +1,13 @@
 package frc.robot.subsystems.collectionSubsystem;
 
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.revrobotics.PersistMode;
+import com.revrobotics.ResetMode;
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.revrobotics.spark.config.SparkBaseConfig;
+import com.revrobotics.spark.config.SparkFlexConfig;
+import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
 import edu.wpi.first.math.Pair;
 import edu.wpi.first.math.system.plant.DCMotor;
@@ -30,29 +35,40 @@ public class Indexer extends SubsystemBase {
     .withGearing(4)
     .withTelemetry("SpindexerMotor", RobotConstants.GetTelemetry());
 
-    private final SmartMotorControllerConfig kickerConfig = new SmartMotorControllerConfig(this)
-    .withControlMode(ControlMode.OPEN_LOOP)
-    .withMotorInverted(true)
-    .withIdleMode(MotorMode.COAST)
-    .withFollowers(Pair.of(followerMotor, false))
-    .withGearing(1)
-    .withTelemetry("KickerMotor", RobotConstants.GetTelemetry());
+    // private final SmartMotorControllerConfig kickerConfig = new SmartMotorControllerConfig(this)
+    // .withControlMode(ControlMode.OPEN_LOOP)
+    // .withMotorInverted(true)
+    // .withIdleMode(MotorMode.COAST)
+    // .withFollowers(Pair.of(followerMotor, false))
+    // .withGearing(1)
+    // .withTelemetry("KickerMotor", RobotConstants.GetTelemetry());
+
+    private final SparkBaseConfig kconf = new SparkFlexConfig()
+    .inverted(true)
+    .idleMode(IdleMode.kCoast);
+
+    private final SparkBaseConfig kfconf = new SparkFlexConfig()
+    .follow(leaderMotor, false)
+    .idleMode(IdleMode.kCoast);
 
     private final SmartMotorController spindexer = new TalonFXWrapper(spindexerMotor, DCMotor.getKrakenX44Foc(1), spindexerConfig);
-    private final SmartMotorController kicker = new SparkWrapper(leaderMotor, DCMotor.getNeoVortex(2), kickerConfig);
+    public Indexer() {
+        leaderMotor.configure(kconf, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+        followerMotor.configure(kfconf, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    }
 
     public void feed() {
-        kicker.setDutyCycle(KickerConstants.FEED);
+        leaderMotor.set(KickerConstants.FEED);
         spindexer.setDutyCycle(IndexerConstants.FEED);
     }
 
     public void outtake() {
-        kicker.setDutyCycle(KickerConstants.OUTTAKE);
+        leaderMotor.set(KickerConstants.OUTTAKE);
         spindexer.setDutyCycle(IndexerConstants.OUTTAKE);
     }
 
     public void stop() {
-        kicker.setDutyCycle(0);
+        leaderMotor.set(0);
         spindexer.setDutyCycle(0);
     }
 }

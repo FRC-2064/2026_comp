@@ -2,13 +2,23 @@ package frc.robot.subsystems.shooterSubsystem;
 
 import static edu.wpi.first.units.Units.RPM;
 
+import com.ctre.phoenix6.configs.MotorOutputConfigs;
+import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.DutyCycleOut;
+import com.ctre.phoenix6.controls.TorqueCurrentFOC;
+import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.InvertedValue;
 
 import edu.wpi.first.math.Pair;
+import edu.wpi.first.math.controller.BangBangController;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.shooterSubsystem.ShooterConstants.FlyWheelConstants;
 import frc.robot.utils.RobotConstants;
@@ -34,8 +44,6 @@ public class FlywheelSubsystem extends SubsystemBase {
             .withGearing(FlyWheelConstants.GEARING)
             .withIdleMode(MotorMode.COAST)
             .withStatorCurrentLimit(FlyWheelConstants.STATOR_LIMIT)
-            .withClosedLoopRampRate(FlyWheelConstants.RAMP_RATE)
-            .withOpenLoopRampRate(FlyWheelConstants.RAMP_RATE)
             .withFollowers(new Pair<>(followerMotor, true))
             .withMotorInverted(true)
             .withTelemetry("ShooterMotor", RobotConstants.GetTelemetry());
@@ -56,17 +64,31 @@ public class FlywheelSubsystem extends SubsystemBase {
 
     private AngularVelocity targetSpeed = FlyWheelConstants.MIN_VELOCITY;
 
+    private VelocityTorqueCurrentFOC flywheelCont = new VelocityTorqueCurrentFOC(RPM.zero());
+
     public FlywheelSubsystem() {
+flywheelMotor.getConfigurator().apply(new TalonFXConfiguration()
+        .withSlot0(
+            new Slot0Configs()
+            .withKP(4)
+            .withKI(0)
+            .withKD(0)
+        ).withMotorOutput(
+            new MotorOutputConfigs().withInverted(InvertedValue.Clockwise_Positive)
+        ));
+
         setDefaultCommand(buildFlywheelDefault());
     }
 
     private Command buildFlywheelDefault() {
-        return flywheel.setSpeed(() -> this.targetSpeed)
-        .onlyWhile(this::shouldSpin)
-        .andThen(Commands.runOnce(this::coastOut))
-        .andThen(Commands.waitUntil(this::shouldSpin))
-        .repeatedly()
-        .withName("FlywheelDefault");
+        // return flywheel.setSpeed(() -> this.targetSpeed)
+        // .onlyWhile(this::shouldSpin)
+        // .andThen(Commands.runOnce(this::coastOut))
+        // .andThen(Commands.waitUntil(this::shouldSpin))
+        // .repeatedly()
+        // .withName("FlywheelDefault");
+
+        return new RunCommand(() -> flywheelMotor.setControl(flywheelCont), this);
     }
 
     private boolean shouldSpin() {
@@ -86,7 +108,7 @@ public class FlywheelSubsystem extends SubsystemBase {
     }
 
     public boolean isUpToSpeed() {
-        return flywheel.isNear(targetSpeed, FlyWheelConstants.TOLERANCE).getAsBoolean();
+        return flywheelMotor.getVelocity().isNear(targetSpeed, FlyWheelConstants.TOLERANCE);
     }
 
     public AngularVelocity getTargetSpeed() {
@@ -100,6 +122,9 @@ public class FlywheelSubsystem extends SubsystemBase {
     @Override
     public void periodic() {
         flywheel.updateTelemetry();
+        flywheelCont.withVelocity(targetSpeed);
+        SmartDashboard.putBoolean("shooter/isready", isUpToSpeed());
+
     }
 
     @Override

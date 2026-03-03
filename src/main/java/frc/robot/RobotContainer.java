@@ -37,7 +37,7 @@ public class RobotContainer {
     // private final Turret turret = new Turret();
     private final Hood hood = new Hood();
     private final FlywheelSubsystem flywheel = new FlywheelSubsystem();
-    //private final IntakeExtension extension = new IntakeExtension();
+    private final IntakeExtension extension = new IntakeExtension();
     private final IntakeRollers rollers = new IntakeRollers();
     private final Indexer indexer = new Indexer();
     private final CommandSwerveDrivetrain drivetrain =
@@ -47,7 +47,7 @@ public class RobotContainer {
     // private final Vision vision = new Vision(drivetrain);
 
     private final Superstructure superstructure = new Superstructure(
-        //extension,
+        extension,
         rollers,
         indexer,
         hood,
@@ -128,12 +128,14 @@ public class RobotContainer {
         // BUTTONS
 
         //back.onTrue(new InstantCommand( () -> extension.setMotorZero()));
-        // a.onTrue(new InstantCommand(extension::extend));
-        // b.onTrue(new InstantCommand(extension::stow));
+        // a.onTrue(new InstantCommand(extension::extend, extension));
+        // b.onTrue(new InstantCommand(extension::stow, extension));
+        b.whileTrue(new RunCommand(indexer::feed, indexer));
         x.onTrue(new InstantCommand(indexer::stop));
-        start.onTrue(new InstantCommand(hood::home));
-        x.whileTrue(drivetrain.applyRequest(() -> brake));
-        a.onTrue(new InstantCommand(superstructure::stowIntake));
+        // x.onTrue(new InstantCommand(indexer::stop));
+        // a.whileTrue(hood.home());
+        // x.whileTrue(drivetrain.applyRequest(() -> brake));
+        // a.onTrue(new InstantCommand(superstructure::stowIntake));
 
 
         // OPERATOR OVERRIDES

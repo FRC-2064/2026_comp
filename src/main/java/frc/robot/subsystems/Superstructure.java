@@ -5,6 +5,8 @@ import static edu.wpi.first.units.Units.RPM;
 
 import java.util.function.DoubleSupplier;
 
+import com.pathplanner.lib.auto.AutoBuilder.TriFunction;
+
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.units.measure.Angle;
@@ -50,11 +52,12 @@ public class Superstructure extends SubsystemBase {
     private State currentState = State.IDLING;
     private TurretMode turretMode = TurretMode.AUTO;
 
-    //private final IntakeExtension extension;
+    private final IntakeExtension extension;
     private final IntakeRollers rollers;
     private final Indexer indexer;
 
     private final Hood hood;
+
     // private final Turret turret;
     private final FlywheelSubsystem flywheel;
 
@@ -68,7 +71,7 @@ public class Superstructure extends SubsystemBase {
     private double speedMult = 1.0;
 
     public Superstructure(
-        //IntakeExtension extension,
+        IntakeExtension extension,
         IntakeRollers rollers,
         Indexer indexer,
         Hood hood,
@@ -78,7 +81,7 @@ public class Superstructure extends SubsystemBase {
         // Vision vision,
         DoubleSupplier turretSupplier
     ) {
-        //this.extension = extension;
+        this.extension = extension;
         this.rollers = rollers;
         this.indexer = indexer;
         this.hood = hood;
@@ -93,7 +96,7 @@ public class Superstructure extends SubsystemBase {
     }
 
     public void stowIntake() {
-        //extension.stow();
+        extension.stow();
     }
 
     public DesiredState getDesiredState() {
@@ -167,7 +170,7 @@ public class Superstructure extends SubsystemBase {
                 break;
             case SHOOTING_SPINUP:
             case SHOOTING_FEED:
-                shoot(new ShooterSolution(Degrees.zero(), Degrees.of(19.5), RPM.of(5000)));
+                shoot(new ShooterSolution(Degrees.zero(), Degrees.of(13), RPM.of(4000)));
                 break;
             case SNOWBLOW_SPINUP:
             case SNOWBLOW_FEED:
@@ -203,7 +206,7 @@ public class Superstructure extends SubsystemBase {
 
     private void intake() {
         speedMult = SuperstructureConstants.INTAKE_SPEED;
-        //extension.extend();
+        extension.extend();
         rollers.intake();
         indexer.stop();
         flywheel.stop();
@@ -212,7 +215,7 @@ public class Superstructure extends SubsystemBase {
 
     private void outtake() {
         speedMult = SuperstructureConstants.OUTTAKE_SPEED;
-        //extension.extend();
+        extension.extend();
         rollers.outtake();
         indexer.outtake();
         flywheel.stop();
@@ -248,9 +251,9 @@ public class Superstructure extends SubsystemBase {
     ) {
         this.speedMult = speedMult;
         if (extendIntake) {
-            //extension.extend();
+            extension.extend();
         } else {
-            //extension.stow();
+            extension.stow();
         }
 
         if (runRollers) {
@@ -262,11 +265,12 @@ public class Superstructure extends SubsystemBase {
         flywheel.setTargetSpeed(sol.flywheelVelocity());
         hood.setTargetAngle(sol.hoodAngle());
 
-        if (currentState == feedState) {
-            indexer.feed();
-        } else {
-            indexer.stop();
-        }
+        // indexer.feed();
+        // if (currentState == feedState) {
+        //     indexer.feed();
+        // } else {
+        //     indexer.stop();
+        // }
     }
 
     private State determineCurrentState() {
@@ -276,13 +280,15 @@ public class Superstructure extends SubsystemBase {
             case OUTTAKE:
                 return State.OUTTAKING;
             case SHOOT:
-                return isReadyToShoot()
-                    ? State.SHOOTING_FEED
-                    : State.SHOOTING_SPINUP;
+            return State.SHOOTING_FEED;
+                // return isReadyToShoot()
+                //     ? State.SHOOTING_FEED
+                //     : State.SHOOTING_SPINUP;
             case SNOWBLOW:
-                return isReadyToShoot()
-                    ? State.SNOWBLOW_FEED
-                    : State.SNOWBLOW_SPINUP;
+            return State.SNOWBLOW_FEED;
+                // return isReadyToShoot()
+                //     ? State.SNOWBLOW_FEED
+                //     : State.SNOWBLOW_SPINUP;
 
             case IDLE:
             default:
@@ -291,7 +297,8 @@ public class Superstructure extends SubsystemBase {
     }
 
     public boolean isReadyToShoot() {
-        return isReadyToShoot;
+        return true;
+        // return isReadyToShoot;
     }
 
     private void updateTelemetry() {
