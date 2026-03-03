@@ -18,19 +18,18 @@ public class ShooterConstants {
         public static final int LEADER_ID = 28;
         public static final int FOLLOWER_ID = 29;
 
-        public static final DCMotor MOTORS = DCMotor.getKrakenX60Foc(2);
-        public static final Distance WHEEL_DIAMETER = Inches.of(4);
-        public static final Mass WHEEL_MASS = Pounds.of(5);
-        public static final MechanismGearing GEARING = new MechanismGearing(1);
+        public static final double GEAR_RATIO = 1.0;
 
         public static final Current STATOR_LIMIT = Amps.of(100);
         public static final AngularVelocity MIN_VELOCITY = RPM.of(0);
         public static final AngularVelocity MAX_VELOCITY = RPM.of(6000);
-        public static final AngularVelocity TOLERANCE = RPM.of(200);
+        public static final AngularVelocity TOLERANCE = RPM.of(50);
 
-        public static final double kP = 1.0;
-        public static final double kI = 0.0;
-        public static final double kD = 0.0;
+        public static final double P = 4.0;
+        public static final double I = 0.0;
+        public static final double D = 0.0;
+        public static final double V = 0.0;
+        public static final double A = 0.0;
     }
 
     public static class HoodConstants {

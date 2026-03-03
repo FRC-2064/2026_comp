@@ -6,9 +6,13 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
 
 import com.pathplanner.lib.auto.NamedCommands;
 import com.ctre.phoenix6.swerve.SwerveRequest;
+import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
+
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
@@ -24,7 +28,7 @@ import frc.robot.subsystems.collectionSubsystem.IntakeExtension;
 import frc.robot.subsystems.collectionSubsystem.IntakeRollers;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 import frc.robot.subsystems.drive.vision.Vision;
-import frc.robot.subsystems.shooterSubsystem.FlywheelSubsystem;
+import frc.robot.subsystems.shooterSubsystem.Flywheel;
 import frc.robot.subsystems.shooterSubsystem.Hood;
 import frc.robot.subsystems.shooterSubsystem.Turret;
 import frc.robot.utils.ShooterCalc;
@@ -36,7 +40,7 @@ public class RobotContainer {
 
     // private final Turret turret = new Turret();
     private final Hood hood = new Hood();
-    private final FlywheelSubsystem flywheel = new FlywheelSubsystem();
+    private final Flywheel flywheel = new Flywheel();
     private final IntakeExtension extension = new IntakeExtension();
     private final IntakeRollers rollers = new IntakeRollers();
     private final Indexer indexer = new Indexer();
@@ -44,7 +48,7 @@ public class RobotContainer {
     TunerConstants.createDrivetrain();
 
     // private final ShooterCalc calc = new ShooterCalc(drivetrain);
-    // private final Vision vision = new Vision(drivetrain);
+    private final Vision vision = new Vision(drivetrain);
 
     private final Superstructure superstructure = new Superstructure(
         extension,
@@ -54,19 +58,22 @@ public class RobotContainer {
         // turret,
         flywheel,
         // calc,
-        // vision,
+        vision,
         () -> operatorXbox.getLeftX()
     );
 
     private final double MaxSpeed =
         1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
+    private final double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond);
 
+    private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
+    .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1)
+    .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 
     private final SwerveRequest.SwerveDriveBrake brake =
         new SwerveRequest.SwerveDriveBrake();
 
     private final Telemetry logger = new Telemetry(MaxSpeed);
-    private final TeleopDrive drive = new TeleopDrive(drivetrain, superstructure, driverXbox);
 
     public RobotContainer() {
         NamedCommands.registerCommand("intake", new RunCommand(() -> superstructure.setDesiredState(DesiredState.INTAKE), superstructure));
@@ -99,7 +106,8 @@ public class RobotContainer {
             .and(rightTrigger)
             .whileTrue(
                 new RunCommand(() ->
-                    superstructure.setDesiredState(DesiredState.SNOWBLOW)
+                    superstructure.setDesiredState(DesiredState.SNOWBLOW),
+                    superstructure
                 )
             );
 
@@ -107,7 +115,8 @@ public class RobotContainer {
             .and(rightTrigger.negate())
             .whileTrue(
                 new RunCommand(() ->
-                    superstructure.setDesiredState(DesiredState.INTAKE)
+                    superstructure.setDesiredState(DesiredState.INTAKE),
+                    superstructure
                 )
             );
 
@@ -115,13 +124,15 @@ public class RobotContainer {
             .and(leftTrigger.negate())
             .whileTrue(
                 new RunCommand(() ->
-                    superstructure.setDesiredState(DesiredState.SHOOT)
+                    superstructure.setDesiredState(DesiredState.SHOOT),
+                    superstructure
                 )
             );
 
         leftBumper.whileTrue(
             new RunCommand(() ->
-                superstructure.setDesiredState(DesiredState.OUTTAKE)
+                superstructure.setDesiredState(DesiredState.OUTTAKE),
+                superstructure
             )
         );
 
@@ -154,8 +165,13 @@ public class RobotContainer {
             )
         );
 
-        drivetrain.setDefaultCommand(drive);
-
+        drivetrain.setDefaultCommand(
+            drivetrain.applyRequest(() ->
+                drive.withVelocityX(-driverXbox.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
+                    .withVelocityY(-driverXbox.getLeftX() * MaxSpeed) // Drive left with negative X (left)
+                    .withRotationalRate(-driverXbox.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
+            )
+        );
         final var idle = new SwerveRequest.Idle();
         RobotModeTriggers.disabled().whileTrue(
             drivetrain.applyRequest(() -> idle).ignoringDisable(true)

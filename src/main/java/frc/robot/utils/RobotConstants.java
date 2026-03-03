@@ -12,6 +12,7 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearAcceleration;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.RobotBase;
+import frc.robot.generated.TunerConstants;
 import yams.motorcontrollers.SmartMotorControllerConfig.TelemetryVerbosity;
 
 public class RobotConstants {
@@ -24,6 +25,9 @@ public class RobotConstants {
     }
 
     public static class DriveConstants {
+        
+        private final double MaxSpeed =
+            1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
 
         public static final LinearVelocity MAX_DRIVE_SPEED = MetersPerSecond.of(
             5.23

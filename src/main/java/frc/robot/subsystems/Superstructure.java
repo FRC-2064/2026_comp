@@ -16,7 +16,7 @@ import frc.robot.subsystems.collectionSubsystem.Indexer;
 import frc.robot.subsystems.collectionSubsystem.IntakeExtension;
 import frc.robot.subsystems.collectionSubsystem.IntakeRollers;
 import frc.robot.subsystems.drive.vision.Vision;
-import frc.robot.subsystems.shooterSubsystem.FlywheelSubsystem;
+import frc.robot.subsystems.shooterSubsystem.Flywheel;
 import frc.robot.subsystems.shooterSubsystem.Hood;
 import frc.robot.subsystems.shooterSubsystem.Turret;
 import frc.robot.utils.ShooterCalc;
@@ -59,7 +59,7 @@ public class Superstructure extends SubsystemBase {
     private final Hood hood;
 
     // private final Turret turret;
-    private final FlywheelSubsystem flywheel;
+    private final Flywheel flywheel;
 
     // private final ShooterCalc shooterCalc;
     private final Debouncer readyToShootDebouncer = new Debouncer(SuperstructureConstants.READY_TO_SHEET_DEBOUNCE_SECONDS);
@@ -76,9 +76,9 @@ public class Superstructure extends SubsystemBase {
         Indexer indexer,
         Hood hood,
         // Turret turret,
-        FlywheelSubsystem flywheel,
+        Flywheel flywheel,
         // ShooterCalc shooterCalc,
-        // Vision vision,
+        Vision vision,
         DoubleSupplier turretSupplier
     ) {
         this.extension = extension;
