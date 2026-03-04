@@ -53,6 +53,7 @@ public class Robot extends TimedRobot {
         if (auto != null) {
             CommandScheduler.getInstance().cancel(auto);
         }
+        HubShiftUtil.initialize();
     }
 
     @Override
