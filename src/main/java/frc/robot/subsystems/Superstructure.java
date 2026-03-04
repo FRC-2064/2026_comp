@@ -254,21 +254,17 @@ public class Superstructure extends SubsystemBase {
         double speedMult,
         boolean extendIntake,
         boolean runRollers,
-        State feedState,
+        State feedState
     ) {
         this.speedMult = speedMult;
 
-        if (agitate) {
-
+        if (extendIntake) {
+            extension.extend();
         } else {
-            if (extendIntake) {
+            if((Timer.getFPGATimestamp() % 0.6) > 0.3) {
                 extension.extend();
             } else {
-                if((Timer.getFPGATimestamp() % 0.6) > 0.3) {
-                    extension.extend();
-                } else {
-                    extension.stow();
-                }
+                extension.stow();
             }
         }
 
