@@ -158,6 +158,7 @@ public class CommandSwerveDrivetrain
         if (Utils.isSimulation()) {
             startSimThread();
         }
+        configureAutoBuilder();
     }
 
     /**
@@ -182,6 +183,7 @@ public class CommandSwerveDrivetrain
         if (Utils.isSimulation()) {
             startSimThread();
         }
+        configureAutoBuilder();
     }
 
     /**

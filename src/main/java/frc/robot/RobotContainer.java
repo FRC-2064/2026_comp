@@ -10,11 +10,12 @@ import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 
 import com.pathplanner.lib.auto.NamedCommands;
+import com.pathplanner.lib.commands.PathPlannerAuto;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -30,7 +31,6 @@ import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 import frc.robot.subsystems.drive.vision.Vision;
 import frc.robot.subsystems.shooterSubsystem.Flywheel;
 import frc.robot.subsystems.shooterSubsystem.Hood;
-import frc.robot.subsystems.shooterSubsystem.Turret;
 import frc.robot.utils.ShooterCalc;
 
 public class RobotContainer {
@@ -47,7 +47,7 @@ public class RobotContainer {
     private final CommandSwerveDrivetrain drivetrain =
     TunerConstants.createDrivetrain();
 
-    // private final ShooterCalc calc = new ShooterCalc(drivetrain);
+    private final ShooterCalc calc = new ShooterCalc(drivetrain);
     private final Vision vision = new Vision(drivetrain);
 
     private final Superstructure superstructure = new Superstructure(
@@ -57,7 +57,7 @@ public class RobotContainer {
         hood,
         // turret,
         flywheel,
-        // calc,
+        calc,
         vision,
         () -> operatorXbox.getLeftX()
     );
@@ -69,11 +69,12 @@ public class RobotContainer {
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
     .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1)
     .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
-
     private final SwerveRequest.SwerveDriveBrake brake =
         new SwerveRequest.SwerveDriveBrake();
 
     private final Telemetry logger = new Telemetry(MaxSpeed);
+
+    private final TeleopDrive tdrive = new TeleopDrive(drivetrain, superstructure, driverXbox);
 
     public RobotContainer() {
         NamedCommands.registerCommand("intake", new RunCommand(() -> superstructure.setDesiredState(DesiredState.INTAKE), superstructure));
@@ -85,8 +86,9 @@ public class RobotContainer {
     }
 
     private void configureBindings() {
-        final var leftTrigger = driverXbox.leftTrigger();   // intake
-        final var rightTrigger = driverXbox.rightTrigger(); // shoot
+
+        final var leftTrigger = driverXbox.leftTrigger().debounce(0.25);   // intake
+        final var rightTrigger = driverXbox.rightTrigger().debounce(0.25); // shoot
         final var leftBumper = driverXbox.leftBumper();     // outtake
 
         final var back = driverXbox.back();   // toggle drive assist
@@ -165,13 +167,15 @@ public class RobotContainer {
             )
         );
 
-        drivetrain.setDefaultCommand(
-            drivetrain.applyRequest(() ->
-                drive.withVelocityX(-driverXbox.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
-                    .withVelocityY(-driverXbox.getLeftX() * MaxSpeed) // Drive left with negative X (left)
-                    .withRotationalRate(-driverXbox.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
-            )
-        );
+        drivetrain.setDefaultCommand(tdrive);
+
+        // drivetrain.setDefaultCommand(
+        //     drivetrain.applyRequest(() ->
+        //         drive.withVelocityX(-driverXbox.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
+        //             .withVelocityY(-driverXbox.getLeftX() * MaxSpeed) // Drive left with negative X (left)
+        //             .withRotationalRate(-driverXbox.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
+        //     )
+        // );
         final var idle = new SwerveRequest.Idle();
         RobotModeTriggers.disabled().whileTrue(
             drivetrain.applyRequest(() -> idle).ignoringDisable(true)
@@ -181,6 +185,6 @@ public class RobotContainer {
     }
 
     public Command getAutonomousCommand() {
-        return Commands.none();
+        return new PathPlannerAuto("test");
     }
 }

@@ -1,11 +1,13 @@
 package frc.robot.subsystems.shooterSubsystem;
 
+import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Volts;
 
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -58,7 +60,14 @@ public class Hood extends SubsystemBase {
     private Angle targetAngle = HoodConstants.STARTING_POS;
 
     public Hood() {
-        setDefaultCommand(hood.setAngle(() -> this.targetAngle));
+        SmartDashboard.putNumber("hood/targetAngleTuning", 0);
+        setDefaultCommand(hood.setAngle(this::getTunableValue));
+        // setDefaultCommand(hood.setAngle(() -> this.targetAngle));
+    }
+
+    private Angle getTunableValue() {
+        var a = SmartDashboard.getNumber("hood/targetAngleTuning", 0);
+        return Degrees.of(a);
     }
 
     public void setTargetAngle(Angle angle) {

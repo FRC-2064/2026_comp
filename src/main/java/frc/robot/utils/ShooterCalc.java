@@ -27,6 +27,7 @@ import frc.robot.utils.FieldConstants.Hub;
 import frc.robot.utils.FieldConstants.LeftBump;
 import frc.robot.utils.FieldConstants.LinesVertical;
 import frc.robot.utils.FieldConstants.RightBump;
+import frc.robot.utils.FieldConstants.Tower;
 import frc.robot.utils.Liana.LianaHelpers;
 
 public class ShooterCalc {
@@ -158,7 +159,6 @@ public class ShooterCalc {
         targetedPath.set(
             buildPath(startPose3d, shotVelH, vLaunchZ, params.tof())
         );
-        targetPublisher.set(toGoal);
 
         return new ShooterSolution(
             Degrees.of(
@@ -190,12 +190,14 @@ public class ShooterCalc {
             double distToRight = logicalPose
                 .getTranslation()
                 .getDistance(RightBump.rightBumpTarget);
-            targetLogical = (distToLeft < distToRight)
-                ? LeftBump.leftBumpTarget
-                : RightBump.rightBumpTarget;
-        }
 
-        return AllianceFlip.apply(targetLogical);
+            double tarX = Tower.frontFaceX;
+            double tarY = logicalPose.getY();
+            targetLogical = new Translation2d(tarX, tarY);
+        }
+        var ret = AllianceFlip.apply(targetLogical);
+        targetPublisher.set(ret);
+        return ret;
     }
 
     private Pose3d[] buildPath(

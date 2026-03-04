@@ -25,14 +25,14 @@ public class Flywheel extends SubsystemBase {
     private AngularVelocity targetSpeed = RPM.zero();
 
     public Flywheel() {
+        SmartDashboard.putNumber("shooter/targetSpeedTuning", 0);
         var c = new TalonFXConfiguration();
 
         c.Slot0
         .withKP(FlyWheelConstants.P)
         .withKI(FlyWheelConstants.I)
         .withKD(FlyWheelConstants.D)
-        .withKA(FlyWheelConstants.A)
-        .withKV(FlyWheelConstants.V);
+        .withKS(FlyWheelConstants.S);
 
         c.CurrentLimits.withStatorCurrentLimit(FlyWheelConstants.STATOR_LIMIT)
         .withStatorCurrentLimitEnable(true);
@@ -50,35 +50,37 @@ public class Flywheel extends SubsystemBase {
     private Command buildFlywheelDefault() {
         return new RunCommand(() ->flywheelMotor.setControl(fr), this).withName("FlywheelDefault");
     }
-    
+
     public void setTargetSpeed(AngularVelocity speed) {
         this.targetSpeed = speed;
     }
-    
+
     public void stop() {
         this.targetSpeed = RPM.zero();
     }
-    
+
     public boolean isUpToSpeed() {
         return flywheelMotor.getVelocity().getValue().isNear(targetSpeed, FlyWheelConstants.TOLERANCE);
     }
-    
+
     public AngularVelocity getTargetSpeed() {
         return targetSpeed;
     }
-    
+
     public AngularVelocity getVelocity() {
         return flywheelMotor.getVelocity().getValue();
     }
-    
+
     private void telemetry() {
         SmartDashboard.putNumber("shooter/velocity", getVelocity().in(RPM));
         SmartDashboard.putNumber("shooter/target", targetSpeed.in(RPM));
     }
-    
+
     @Override
     public void periodic() {
         fr.withVelocity(targetSpeed);
+        var speed = SmartDashboard.getNumber("shooter/targetSpeedTuning", 0);
+        fr.withVelocity(RPM.of(speed));
         telemetry();
     }
 }

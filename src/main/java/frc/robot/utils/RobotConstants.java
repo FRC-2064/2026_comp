@@ -4,6 +4,7 @@ import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.MetersPerSecondPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
+import static edu.wpi.first.units.Units.Seconds;
 
 import com.ctre.phoenix6.CANBus;
 
@@ -11,6 +12,7 @@ import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearAcceleration;
 import edu.wpi.first.units.measure.LinearVelocity;
+import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.generated.TunerConstants;
 import yams.motorcontrollers.SmartMotorControllerConfig.TelemetryVerbosity;
@@ -25,7 +27,7 @@ public class RobotConstants {
     }
 
     public static class DriveConstants {
-        
+
         private final double MaxSpeed =
             1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
 
@@ -49,7 +51,9 @@ public class RobotConstants {
 
     public static class SuperstructureConstants {
 
-        public static final double READY_TO_SHEET_DEBOUNCE_SECONDS = 0.25;
+        public static final double READY_TO_SHOOT_DEBOUNCE_SECONDS = 0.25;
+
+        public static final Time KICKER_CLEAR_TIMER = Seconds.of(0.5);
 
         public static final double STOW_SPEED = 1.0;
         public static final double OUTTAKE_SPEED = 1.0;

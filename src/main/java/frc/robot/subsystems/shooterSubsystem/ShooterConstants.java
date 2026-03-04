@@ -25,11 +25,10 @@ public class ShooterConstants {
         public static final AngularVelocity MAX_VELOCITY = RPM.of(6000);
         public static final AngularVelocity TOLERANCE = RPM.of(50);
 
-        public static final double P = 4.0;
+        public static final double P = 5.0;
         public static final double I = 0.0;
         public static final double D = 0.0;
-        public static final double V = 0.0;
-        public static final double A = 0.0;
+        public static final double S = 2.5;
     }
 
     public static class HoodConstants {
@@ -64,7 +63,7 @@ public class ShooterConstants {
 
         public static final int ENCODER_13_ID = 50;
         public static final int ENCODER_14_ID = 51;
-        public static final int MOTOR_ID = 32;
+        public static final int MOTOR_ID = 30;
         public static final DCMotor MOTOR_TYPE = DCMotor.getKrakenX44(1);
 
         public static final Distance LENGTH = Meters.of(0.25);

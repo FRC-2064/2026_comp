@@ -5,11 +5,10 @@ import static edu.wpi.first.units.Units.RPM;
 
 import java.util.function.DoubleSupplier;
 
-import com.pathplanner.lib.auto.AutoBuilder.TriFunction;
-
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.collectionSubsystem.Indexer;
@@ -18,8 +17,8 @@ import frc.robot.subsystems.collectionSubsystem.IntakeRollers;
 import frc.robot.subsystems.drive.vision.Vision;
 import frc.robot.subsystems.shooterSubsystem.Flywheel;
 import frc.robot.subsystems.shooterSubsystem.Hood;
-import frc.robot.subsystems.shooterSubsystem.Turret;
 import frc.robot.utils.ShooterCalc;
+import frc.robot.utils.Liana.LianaHelpers;
 import frc.robot.utils.RobotConstants.SuperstructureConstants;
 import frc.robot.utils.ShooterCalc.ShooterSolution;
 
@@ -45,7 +44,8 @@ public class Superstructure extends SubsystemBase {
         SHOOTING_FEED,
         SNOWBLOW_SPINUP,
         SNOWBLOW_FEED,
-        OUTTAKING
+        OUTTAKING,
+        CLEARING_KICKER
     }
 
     private DesiredState desiredState = DesiredState.IDLE;
@@ -61,12 +61,14 @@ public class Superstructure extends SubsystemBase {
     // private final Turret turret;
     private final Flywheel flywheel;
 
-    // private final ShooterCalc shooterCalc;
-    private final Debouncer readyToShootDebouncer = new Debouncer(SuperstructureConstants.READY_TO_SHEET_DEBOUNCE_SECONDS);
+    private final ShooterCalc shooterCalc;
+    private final Debouncer readyToShootDebouncer = new Debouncer(SuperstructureConstants.READY_TO_SHOOT_DEBOUNCE_SECONDS);
     private boolean isReadyToShoot = false;
 
     private Angle manualTurretSetpoint = Degrees.zero();
     private final DoubleSupplier manualTurretAxisSupplier;
+
+    private final Timer kickerClearTimer = new Timer();
 
     private double speedMult = 1.0;
 
@@ -77,7 +79,7 @@ public class Superstructure extends SubsystemBase {
         Hood hood,
         // Turret turret,
         Flywheel flywheel,
-        // ShooterCalc shooterCalc,
+        ShooterCalc shooterCalc,
         Vision vision,
         DoubleSupplier turretSupplier
     ) {
@@ -87,7 +89,7 @@ public class Superstructure extends SubsystemBase {
         this.hood = hood;
         // this.turret = turret;
         this.flywheel = flywheel;
-        // this.shooterCalc = shooterCalc;
+        this.shooterCalc = shooterCalc;
         this.manualTurretAxisSupplier = turretSupplier;
     }
 
@@ -128,16 +130,13 @@ public class Superstructure extends SubsystemBase {
 
     @Override
     public void periodic() {
-        currentState = determineCurrentState();
-        // var solution = shooterCalc.getSelectedSolution();
-
         boolean ready = flywheel.isUpToSpeed()
                         && hood.atPosition();
-        //                 && turret.atPosition();
-
-        // boolean ready = true;
+                        //&& turret.atPosition();
         isReadyToShoot = readyToShootDebouncer.calculate(ready);
 
+        currentState = determineCurrentState();
+        var solution = shooterCalc.getSelectedSolution();
 
         switch (turretMode) {
             case MANUAL:
@@ -176,25 +175,29 @@ public class Superstructure extends SubsystemBase {
             case SNOWBLOW_FEED:
                 snowblow(new ShooterSolution(Degrees.zero(), Degrees.of(19.5), RPM.of(5000)));
                 break;
+            case CLEARING_KICKER:
+                clear();
+                break;
         }
 
         updateTelemetry();
     }
 
+    public boolean isFeeding(State state) {
+        return (state == State.SHOOTING_FEED || state == State.SNOWBLOW_FEED);
+    }
+
     public boolean isFeeding() {
-        return (
-            currentState == State.SHOOTING_FEED ||
-            currentState == State.SNOWBLOW_FEED
-        );
+        return isFeeding(currentState);
     }
 
     public boolean isIntaking() {
         return currentState == State.INTAKING;
     }
 
-    // public ShooterSolution getCurrentSolution() {
-    //     return shooterCalc.getSelectedSolution();
-    // }
+    public ShooterSolution getCurrentSolution() {
+        return shooterCalc.getSelectedSolution();
+    }
 
     private void idling() {
         speedMult = SuperstructureConstants.STOW_SPEED;
@@ -220,6 +223,10 @@ public class Superstructure extends SubsystemBase {
         indexer.outtake();
         flywheel.stop();
         hood.down();
+    }
+
+    private void clear() {
+        indexer.outtake();
     }
 
     private void shoot(ShooterSolution sol) {
@@ -265,74 +272,106 @@ public class Superstructure extends SubsystemBase {
         flywheel.setTargetSpeed(sol.flywheelVelocity());
         hood.setTargetAngle(sol.hoodAngle());
 
-        // indexer.feed();
-        // if (currentState == feedState) {
-        //     indexer.feed();
-        // } else {
-        //     indexer.stop();
-        // }
+        if (currentState == feedState) {
+            indexer.feed();
+        } else if (currentState != State.CLEARING_KICKER) {
+            indexer.stop();
+        }
+    }
+
+    private State resolveShooterState(State feedState, State spinupState) {
+        if (currentState == feedState && !isReadyToShoot()) {
+            kickerClearTimer.restart();
+            return State.CLEARING_KICKER;
+        }
+
+        if (currentState == State.CLEARING_KICKER) {
+            if (!kickerClearTimer.hasElapsed(SuperstructureConstants.KICKER_CLEAR_TIMER)) {
+                return State.CLEARING_KICKER;
+            }
+            kickerClearTimer.stop();
+            kickerClearTimer.reset();
+            return spinupState;
+        }
+
+        return isReadyToShoot() ? feedState : spinupState;
+    }
+
+    private State resolveIdleState() {
+        if (isFeeding(currentState)) {
+            kickerClearTimer.restart();
+            return State.CLEARING_KICKER;
+        }
+
+        if (currentState == State.CLEARING_KICKER) {
+            if (!kickerClearTimer.hasElapsed(SuperstructureConstants.KICKER_CLEAR_TIMER)) {
+                return State.CLEARING_KICKER;
+            }
+            kickerClearTimer.stop();
+            kickerClearTimer.reset();
+        }
+
+        return State.IDLING;
     }
 
     private State determineCurrentState() {
         switch (desiredState) {
             case INTAKE:
                 return State.INTAKING;
+
             case OUTTAKE:
                 return State.OUTTAKING;
+
             case SHOOT:
-            return State.SHOOTING_FEED;
-                // return isReadyToShoot()
-                //     ? State.SHOOTING_FEED
-                //     : State.SHOOTING_SPINUP;
+                return resolveShooterState(State.SHOOTING_FEED, State.SHOOTING_SPINUP);
+
             case SNOWBLOW:
-            return State.SNOWBLOW_FEED;
-                // return isReadyToShoot()
-                //     ? State.SNOWBLOW_FEED
-                //     : State.SNOWBLOW_SPINUP;
+                return resolveShooterState(State.SNOWBLOW_FEED, State.SNOWBLOW_SPINUP);
 
             case IDLE:
             default:
-                return State.IDLING;
+                return resolveIdleState();
         }
     }
 
     public boolean isReadyToShoot() {
-        return true;
-        // return isReadyToShoot;
+        return isReadyToShoot;
     }
 
     private void updateTelemetry() {
-        // SmartDashboard.putString(
-        //     "Superstructure/DesiredState",
-        //     desiredState.name()
-        // );
-        // SmartDashboard.putString(
-        //     "Superstructure/CurrentState",
-        //     currentState.name()
-        // );
-        // SmartDashboard.putBoolean(
-        //     "Superstructure/ReadyToShoot",
-        //     isReadyToShoot()
-        // );
-        // SmartDashboard.putBoolean(
-        //     "Superstructure/FlywheelReady",
-        //     flywheel.isUpToSpeed()
-        // );
-        // SmartDashboard.putBoolean(
-        //     "Superstructure/HoodReady",
-        //     hood.atPosition()
-        // );
+        SmartDashboard.putString(
+            "Superstructure/DesiredState",
+            desiredState.name()
+        );
+        SmartDashboard.putString(
+            "Superstructure/CurrentState",
+            currentState.name()
+        );
+        SmartDashboard.putBoolean(
+            "Superstructure/ReadyToShoot",
+            isReadyToShoot()
+        );
+        SmartDashboard.putBoolean(
+            "Superstructure/FlywheelReady",
+            flywheel.isUpToSpeed()
+        );
+        SmartDashboard.putBoolean(
+            "Superstructure/HoodReady",
+            hood.atPosition()
+        );
         // SmartDashboard.putBoolean(
         //     "Superstructure/TurretReady",
         //     turret.atPosition()
         // );
-        // SmartDashboard.putString(
-        //     "Superstructure/TurretManualState",
-        //     turretMode.name()
-        // );
-        // SmartDashboard.putNumber(
-        //     "Superstructure/TurretManualAngle",
-        //     manualTurretSetpoint.in(Degrees)
-        // );
+        SmartDashboard.putString(
+            "Superstructure/TurretManualState",
+            turretMode.name()
+        );
+        SmartDashboard.putNumber(
+            "Superstructure/TurretManualAngle",
+            manualTurretSetpoint.in(Degrees)
+        );
+
+        LianaHelpers.updateGameTime();
     }
 }
