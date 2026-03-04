@@ -24,6 +24,7 @@ public class CollectionConstants {
         public static final Distance INCHES_PER_ROT = Inches.of(Math.PI * 1.4);
         public static final Angle STOW = Rotations.zero();
         public static final Angle INTAKE = Rotations.of(9.1 / INCHES_PER_ROT.in(Inches));
+        public static final Angle AGITATE = INTAKE.div(2);
 
         // MOTION MAGIC
         public static final double P = 50;

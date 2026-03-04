@@ -47,4 +47,8 @@ public class IntakeExtension extends SubsystemBase {
     public void stow() {
         extendMotor.setControl(mmr.withPosition(IntakeConstants.STOW));
     }
+
+    public void agitate() {
+        extendMotor.setControl(mmr.withPosition(IntakeConstants.AGITATE));
+    }
 }

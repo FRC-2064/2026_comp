@@ -1,15 +1,12 @@
 package frc.robot.subsystems.shooterSubsystem;
 
 import static edu.wpi.first.units.Units.Degrees;
-import static edu.wpi.first.units.Units.Volts;
 
 import com.ctre.phoenix6.hardware.TalonFX;
 
-import edu.wpi.first.math.filter.Debouncer;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.shooterSubsystem.ShooterConstants.HoodConstants;
 import frc.robot.utils.RobotConstants;
@@ -55,8 +52,6 @@ public class Hood extends SubsystemBase {
 
     private final Pivot hood = new Pivot(hoodConfig);
 
-    private final Debouncer statorDebounce = new Debouncer(0.1);
-
     private Angle targetAngle = HoodConstants.STARTING_POS;
 
     public Hood() {
@@ -71,11 +66,21 @@ public class Hood extends SubsystemBase {
     }
 
     public void setTargetAngle(Angle angle) {
-        this.targetAngle = angle;
+        var a = Degrees.of(
+            MathUtil.clamp(
+                angle.in(Degrees),
+                HoodConstants.MIN_ANGLE.in(Degrees),
+                HoodConstants.MAX_ANGLE.in(Degrees)
+            )
+        );
+
+        this.targetAngle = a;
+        hood.setAngle(a);
     }
 
     public void down() {
         this.targetAngle = HoodConstants.MIN_ANGLE;
+        hood.setAngle(HoodConstants.MIN_ANGLE);
     }
 
     public Angle getTargetAngle() {
@@ -88,17 +93,6 @@ public class Hood extends SubsystemBase {
 
     public boolean atPosition() {
         return hood.isNear(targetAngle, HoodConstants.TOLERANCE).getAsBoolean();
-    }
-
-    private boolean atHardStop() {
-        return statorDebounce.calculate(motor.getStatorCurrent().gte(HoodConstants.STATOR_LIMIT));
-    }
-
-    public Command home() {
-        return Commands.run(
-            () -> hood.setVoltage(Volts.of(-12)), this)
-        .until(this::atHardStop)
-        .andThen(() -> motor.setEncoderPosition(HoodConstants.MIN_ANGLE));
     }
 
     @Override

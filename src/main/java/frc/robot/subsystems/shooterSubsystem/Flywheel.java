@@ -10,10 +10,9 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.shooterSubsystem.ShooterConstants.FlyWheelConstants;
 
@@ -44,19 +43,24 @@ public class Flywheel extends SubsystemBase {
         followerMotor.getConfigurator().apply(c);
 
         followerMotor.setControl(new Follower(flywheelMotor.getDeviceID(), MotorAlignmentValue.Opposed));
-        setDefaultCommand(buildFlywheelDefault());
     }
 
-    private Command buildFlywheelDefault() {
-        return new RunCommand(() ->flywheelMotor.setControl(fr), this).withName("FlywheelDefault");
-    }
 
     public void setTargetSpeed(AngularVelocity speed) {
-        this.targetSpeed = speed;
+        var s = RPM.of(
+            MathUtil.clamp(
+                speed.in(RPM),
+                FlyWheelConstants.MAX_VELOCITY.in(RPM),
+                FlyWheelConstants.MIN_VELOCITY.in(RPM)
+            )
+        );
+        this.targetSpeed = s;
+        // flywheelMotor.setControl(fr.withVelocity(s));
     }
 
     public void stop() {
         this.targetSpeed = RPM.zero();
+        flywheelMotor.setControl(fr.withVelocity(RPM.zero()));
     }
 
     public boolean isUpToSpeed() {
@@ -78,7 +82,6 @@ public class Flywheel extends SubsystemBase {
 
     @Override
     public void periodic() {
-        fr.withVelocity(targetSpeed);
         var speed = SmartDashboard.getNumber("shooter/targetSpeedTuning", 0);
         fr.withVelocity(RPM.of(speed));
         telemetry();
