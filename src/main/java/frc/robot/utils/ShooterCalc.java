@@ -23,6 +23,7 @@ import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 import frc.robot.subsystems.shooterSubsystem.ShooterConstants;
+import frc.robot.subsystems.shooterSubsystem.ShooterConstants.TurretConstants;
 import frc.robot.utils.FieldConstants.Hub;
 import frc.robot.utils.FieldConstants.LeftBump;
 import frc.robot.utils.FieldConstants.LinesVertical;
@@ -105,11 +106,11 @@ public class ShooterCalc {
         var state = drive.getState();
         Pose2d pose = state.Pose;
 
-        Translation2d turretOffset = ShooterConstants.ROBOT_CENTER_TO_SHOOTER.toTranslation2d();
+        //Translation2d turretOffset = ShooterConstants.ROBOT_CENTER_TO_SHOOTER.();
         double omega = state.Speeds.omegaRadiansPerSecond;
 
-        double tanVelX = -omega * turretOffset.getY();
-        double tanVelY = -omega * turretOffset.getX();
+        double tanVelX = -omega; //* turretOffset.getY();
+        double tanVelY = -omega; //* turretOffset.getX();
 
         Translation2d robotRelativeTurretVel = new Translation2d(
             state.Speeds.vxMetersPerSecond + tanVelX,
@@ -134,7 +135,7 @@ public class ShooterCalc {
         }
 
         Translation2d toGoal = target.minus(lookaheadPos);
-        Rotation2d turretAngle = toGoal.getAngle().minus(pose.getRotation());
+        Rotation2d turretAngle = toGoal.getAngle().minus(pose.getRotation()).plus(Rotation2d.fromDegrees(180));
 
         FullShooterParams params = SHOOTER_MAP.get(lookaheadDist);
 
@@ -162,8 +163,10 @@ public class ShooterCalc {
 
         return new ShooterSolution(
             Degrees.of(
-                turretAngle.getDegrees() +
-                    LianaHelpers.getTurretAngleAdjustment()
+                MathUtil.clamp(
+                    turretAngle.getDegrees() + LianaHelpers.getTurretAngleAdjustment(),
+                    TurretConstants.MIN_ANGLE.in(Degrees),
+                    TurretConstants.MAX_ANGLE.in(Degrees))
             ),
             Degrees.of(params.hood() + LianaHelpers.getHoodAngleAdjustment()),
             RPM.of(params.rpm() + LianaHelpers.getFlywheelAdjustment())

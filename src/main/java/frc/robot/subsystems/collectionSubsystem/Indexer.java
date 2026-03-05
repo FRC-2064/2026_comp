@@ -55,7 +55,7 @@ public class Indexer extends SubsystemBase {
 
     public void outtake() {
         leaderMotor.set(KickerConstants.OUTTAKE);
-        spindexerMotor.setControl(sr.withOutput(IndexerConstants.OUTTAKE));
+        // spindexerMotor.setControl(sr.withOutput(IndexerConstants.OUTTAKE));
     }
 
     public void stop() {

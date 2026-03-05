@@ -17,6 +17,7 @@ import frc.robot.subsystems.collectionSubsystem.IntakeRollers;
 import frc.robot.subsystems.drive.vision.Vision;
 import frc.robot.subsystems.shooterSubsystem.Flywheel;
 import frc.robot.subsystems.shooterSubsystem.Hood;
+import frc.robot.subsystems.shooterSubsystem.Turret;
 import frc.robot.utils.ShooterCalc;
 import frc.robot.utils.Liana.LianaHelpers;
 import frc.robot.utils.RobotConstants.SuperstructureConstants;
@@ -50,7 +51,7 @@ public class Superstructure extends SubsystemBase {
 
     private DesiredState desiredState = DesiredState.IDLE;
     private State currentState = State.IDLING;
-    private TurretMode turretMode = TurretMode.AUTO;
+    private TurretMode turretMode = TurretMode.MANUAL;
 
     private final IntakeExtension extension;
     private final IntakeRollers rollers;
@@ -58,7 +59,7 @@ public class Superstructure extends SubsystemBase {
 
     private final Hood hood;
 
-    // private final Turret turret;
+    private final Turret turret;
     private final Flywheel flywheel;
 
     private final ShooterCalc shooterCalc;
@@ -77,7 +78,7 @@ public class Superstructure extends SubsystemBase {
         IntakeRollers rollers,
         Indexer indexer,
         Hood hood,
-        // Turret turret,
+        Turret turret,
         Flywheel flywheel,
         ShooterCalc shooterCalc,
         Vision vision,
@@ -87,7 +88,7 @@ public class Superstructure extends SubsystemBase {
         this.rollers = rollers;
         this.indexer = indexer;
         this.hood = hood;
-        // this.turret = turret;
+        this.turret = turret;
         this.flywheel = flywheel;
         this.shooterCalc = shooterCalc;
         this.manualTurretAxisSupplier = turretSupplier;
@@ -131,12 +132,14 @@ public class Superstructure extends SubsystemBase {
     @Override
     public void periodic() {
         boolean ready = flywheel.isUpToSpeed()
-                        && hood.atPosition();
-                        //&& turret.atPosition();
+                        && hood.atPosition()
+                        && turret.atPosition();
         isReadyToShoot = readyToShootDebouncer.calculate(ready);
 
         currentState = determineCurrentState();
         var solution = shooterCalc.getSelectedSolution();
+
+        SmartDashboard.putNumber("Turret/SolutionOutput", solution.turretAngle().in(Degrees));
 
         switch (turretMode) {
             case MANUAL:
@@ -148,14 +151,16 @@ public class Superstructure extends SubsystemBase {
                     manualTurretSetpoint = manualTurretSetpoint
                     .plus(SuperstructureConstants.MANUAL_TURRET_RATE.times(axis));
                 }
-                // turret.setTargetAngle(manualTurretSetpoint);
+                turret.setTargetAngle(manualTurretSetpoint);
                 break;
 
 		    case AUTO:
-				// turret.setTargetAngle(solution.turretAngle());
-				// manualTurretSetpoint = solution.turretAngle();
+				turret.setTargetAngle(solution.turretAngle());
+				manualTurretSetpoint = solution.turretAngle();
 				break;
         }
+
+        var sol = new ShooterSolution(Degrees.zero(), Degrees.zero(), RPM.of(2750));
 
         switch (currentState) {
             case IDLING:
@@ -169,11 +174,11 @@ public class Superstructure extends SubsystemBase {
                 break;
             case SHOOTING_SPINUP:
             case SHOOTING_FEED:
-                shoot(new ShooterSolution(Degrees.zero(), Degrees.of(13), RPM.of(4000)));
+                shoot(sol);
                 break;
             case SNOWBLOW_SPINUP:
             case SNOWBLOW_FEED:
-                snowblow(new ShooterSolution(Degrees.zero(), Degrees.of(19.5), RPM.of(5000)));
+                snowblow(sol);
                 break;
             case CLEARING_KICKER:
                 clear();
@@ -365,10 +370,10 @@ public class Superstructure extends SubsystemBase {
             "Superstructure/HoodReady",
             hood.atPosition()
         );
-        // SmartDashboard.putBoolean(
-        //     "Superstructure/TurretReady",
-        //     turret.atPosition()
-        // );
+        SmartDashboard.putBoolean(
+            "Superstructure/TurretReady",
+            turret.atPosition()
+        );
         SmartDashboard.putString(
             "Superstructure/TurretManualState",
             turretMode.name()

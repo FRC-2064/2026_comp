@@ -4,6 +4,7 @@ import static edu.wpi.first.units.Units.RPM;
 
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
+import com.ctre.phoenix6.controls.StrictFollower;
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
@@ -26,6 +27,7 @@ public class Flywheel extends SubsystemBase {
     public Flywheel() {
         SmartDashboard.putNumber("shooter/targetSpeedTuning", 0);
         var c = new TalonFXConfiguration();
+        var fc = new TalonFXConfiguration();
 
         c.Slot0
         .withKP(FlyWheelConstants.P)
@@ -39,10 +41,15 @@ public class Flywheel extends SubsystemBase {
         c.MotorOutput.withNeutralMode(NeutralModeValue.Coast)
         .withInverted(InvertedValue.Clockwise_Positive);
 
-        flywheelMotor.getConfigurator().apply(c);
-        followerMotor.getConfigurator().apply(c);
+        fc.MotorOutput.withInverted(InvertedValue.CounterClockwise_Positive);
 
-        followerMotor.setControl(new Follower(flywheelMotor.getDeviceID(), MotorAlignmentValue.Opposed));
+
+        flywheelMotor.getConfigurator().apply(c);
+        followerMotor.getConfigurator().apply(fc);
+
+        // followerMotor.setControl(new StrictFollower(FlyWheelConstants.LEADER_ID));
+
+        followerMotor.setControl(new Follower(FlyWheelConstants.LEADER_ID, MotorAlignmentValue.Opposed));
     }
 
 
@@ -50,17 +57,21 @@ public class Flywheel extends SubsystemBase {
         var s = RPM.of(
             MathUtil.clamp(
                 speed.in(RPM),
-                FlyWheelConstants.MAX_VELOCITY.in(RPM),
-                FlyWheelConstants.MIN_VELOCITY.in(RPM)
+                FlyWheelConstants.MIN_VELOCITY.in(RPM),
+                FlyWheelConstants.MAX_VELOCITY.in(RPM)
             )
         );
         this.targetSpeed = s;
-        // flywheelMotor.setControl(fr.withVelocity(s));
+        flywheelMotor.setControl(fr.withVelocity(s));
+        // followerMotor.setControl(new Follower(FlyWheelConstants.LEADER_ID, MotorAlignmentValue.Opposed));
+
     }
 
     public void stop() {
         this.targetSpeed = RPM.zero();
-        flywheelMotor.setControl(fr.withVelocity(RPM.zero()));
+        flywheelMotor.stopMotor();
+        // followerMotor.setControl(new Follower(FlyWheelConstants.LEADER_ID, MotorAlignmentValue.Opposed));
+
     }
 
     public boolean isUpToSpeed() {
@@ -82,8 +93,6 @@ public class Flywheel extends SubsystemBase {
 
     @Override
     public void periodic() {
-        var speed = SmartDashboard.getNumber("shooter/targetSpeedTuning", 0);
-        fr.withVelocity(RPM.of(speed));
         telemetry();
     }
 }

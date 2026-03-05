@@ -55,14 +55,7 @@ public class Hood extends SubsystemBase {
     private Angle targetAngle = HoodConstants.STARTING_POS;
 
     public Hood() {
-        SmartDashboard.putNumber("hood/targetAngleTuning", 0);
-        setDefaultCommand(hood.setAngle(this::getTunableValue));
-        // setDefaultCommand(hood.setAngle(() -> this.targetAngle));
-    }
-
-    private Angle getTunableValue() {
-        var a = SmartDashboard.getNumber("hood/targetAngleTuning", 0);
-        return Degrees.of(a);
+        setDefaultCommand(hood.setAngle(() -> this.targetAngle));
     }
 
     public void setTargetAngle(Angle angle) {

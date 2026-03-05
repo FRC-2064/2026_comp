@@ -20,9 +20,14 @@ import yams.units.EasyCRT;
 import yams.units.EasyCRTConfig;
 
 public class Turret extends SubsystemBase {
+
     private final TalonFX turretMotor = new TalonFX(TurretConstants.MOTOR_ID);
-    private final CANcoder throughBoreSmall = new CANcoder(TurretConstants.ENCODER_13_ID);
-    private final CANcoder throughBoreLarge = new CANcoder(TurretConstants.ENCODER_14_ID);
+    private final CANcoder throughBoreSmall = new CANcoder(
+        TurretConstants.ENCODER_13_ID
+    );
+    private final CANcoder throughBoreLarge = new CANcoder(
+        TurretConstants.ENCODER_14_ID
+    );
 
     private final EasyCRTConfig easyCRTConfig = new EasyCRTConfig(
         throughBoreSmall.getAbsolutePosition().asSupplier(),
@@ -35,7 +40,8 @@ public class Turret extends SubsystemBase {
         )
         .withAbsoluteEncoderOffsets(
             TurretConstants.ENCODER_13_OFFSET,
-            TurretConstants.ENCODER_14_OFFSET)
+            TurretConstants.ENCODER_14_OFFSET
+        )
         .withMatchTolerance(Rotations.of(0.06))
         .withAbsoluteEncoderInversions(false, false);
 
@@ -65,7 +71,7 @@ public class Turret extends SubsystemBase {
     private final PivotConfig turretConfig = new PivotConfig(motor)
         .withStartingPosition(TurretConstants.STARTING_POS)
         .withHardLimit(TurretConstants.MIN_ANGLE, TurretConstants.MAX_ANGLE)
-        .withSoftLimits(Degrees.of(5), Degrees.of(350))
+        .withSoftLimits(Degrees.of(-90), Degrees.of(90))
         .withTelemetry("Turret", RobotConstants.GetTelemetry())
         .withMOI(TurretConstants.LENGTH, TurretConstants.WEIGHT);
 
@@ -98,6 +104,14 @@ public class Turret extends SubsystemBase {
         return turret
             .isNear(targetAngle, TurretConstants.TOLERANCE)
             .getAsBoolean();
+    }
+
+    public void zero() {
+        turretMotor.setPosition(Degrees.zero());
+    }
+
+    public void setEncoderZero(){
+        turretMotor.setPosition(0);
     }
 
     @Override

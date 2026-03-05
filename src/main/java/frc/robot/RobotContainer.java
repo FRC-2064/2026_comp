@@ -9,11 +9,10 @@ import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 
+import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
+import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.PathPlannerAuto;
-import com.ctre.phoenix6.swerve.SwerveRequest;
-import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
-
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
@@ -31,6 +30,7 @@ import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 import frc.robot.subsystems.drive.vision.Vision;
 import frc.robot.subsystems.shooterSubsystem.Flywheel;
 import frc.robot.subsystems.shooterSubsystem.Hood;
+import frc.robot.subsystems.shooterSubsystem.Turret;
 import frc.robot.utils.ShooterCalc;
 
 public class RobotContainer {
@@ -38,14 +38,14 @@ public class RobotContainer {
     final CommandXboxController driverXbox = new CommandXboxController(0);
     final CommandXboxController operatorXbox = new CommandXboxController(1);
 
-    // private final Turret turret = new Turret();
+    private final Turret turret = new Turret();
     private final Hood hood = new Hood();
     private final Flywheel flywheel = new Flywheel();
     private final IntakeExtension extension = new IntakeExtension();
     private final IntakeRollers rollers = new IntakeRollers();
     private final Indexer indexer = new Indexer();
     private final CommandSwerveDrivetrain drivetrain =
-    TunerConstants.createDrivetrain();
+        TunerConstants.createDrivetrain();
 
     private final ShooterCalc calc = new ShooterCalc(drivetrain);
     private final Vision vision = new Vision(drivetrain);
@@ -55,7 +55,7 @@ public class RobotContainer {
         rollers,
         indexer,
         hood,
-        // turret,
+        turret,
         flywheel,
         calc,
         vision,
@@ -64,37 +64,62 @@ public class RobotContainer {
 
     private final double MaxSpeed =
         1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
-    private final double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond);
+    private final double MaxAngularRate = RotationsPerSecond.of(0.75).in(
+        RadiansPerSecond
+    );
 
-    private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
-    .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1)
-    .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
+    private final SwerveRequest.FieldCentric drive =
+        new SwerveRequest.FieldCentric()
+            .withDeadband(MaxSpeed * 0.1)
+            .withRotationalDeadband(MaxAngularRate * 0.1)
+            .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
     private final SwerveRequest.SwerveDriveBrake brake =
         new SwerveRequest.SwerveDriveBrake();
 
     private final Telemetry logger = new Telemetry(MaxSpeed);
 
-    private final TeleopDrive tdrive = new TeleopDrive(drivetrain, superstructure, driverXbox);
+    private final TeleopDrive tdrive = new TeleopDrive(
+        drivetrain,
+        superstructure,
+        driverXbox
+    );
 
     public RobotContainer() {
-        NamedCommands.registerCommand("intake", new RunCommand(() -> superstructure.setDesiredState(DesiredState.INTAKE), superstructure));
-        NamedCommands.registerCommand("snowblow", new RunCommand(() -> superstructure.setDesiredState(DesiredState.SNOWBLOW), superstructure));
-        NamedCommands.registerCommand("stow", new RunCommand(() -> superstructure.setDesiredState(DesiredState.IDLE), superstructure));
+        NamedCommands.registerCommand(
+            "intake",
+            new RunCommand(
+                () -> superstructure.setDesiredState(DesiredState.INTAKE),
+                superstructure
+            )
+        );
+        NamedCommands.registerCommand(
+            "snowblow",
+            new RunCommand(
+                () -> superstructure.setDesiredState(DesiredState.SNOWBLOW),
+                superstructure
+            )
+        );
+        NamedCommands.registerCommand(
+            "stow",
+            new RunCommand(
+                () -> superstructure.setDesiredState(DesiredState.IDLE),
+                superstructure
+            )
+        );
         // NamedCommands.registerCommand("retract intake", new InstantCommand(superstructure::stowIntake));
 
         configureBindings();
     }
 
     private void configureBindings() {
-
-        final var leftTrigger = driverXbox.leftTrigger().debounce(0.25);   // intake
+        final var leftTrigger = driverXbox.leftTrigger().debounce(0.25); // intake
         final var rightTrigger = driverXbox.rightTrigger().debounce(0.25); // shoot
-        final var leftBumper = driverXbox.leftBumper();     // outtake
+        final var leftBumper = driverXbox.leftBumper(); // outtake
 
-        final var back = driverXbox.back();   // toggle drive assist
+        final var back = driverXbox.back(); // toggle drive assist
         final var start = driverXbox.start(); // home hood TESTING ONLY
-        final var x = driverXbox.x();         // lock
-        final var a = driverXbox.a();         // stow intake
+        final var x = driverXbox.x(); // lock
+        final var a = driverXbox.a(); // stow intake
         final var b = driverXbox.b();
 
         final var oa = operatorXbox.a(); // toggle manual turret manual override
@@ -107,8 +132,8 @@ public class RobotContainer {
         leftTrigger
             .and(rightTrigger)
             .whileTrue(
-                new RunCommand(() ->
-                    superstructure.setDesiredState(DesiredState.SNOWBLOW),
+                new RunCommand(
+                    () -> superstructure.setDesiredState(DesiredState.SNOWBLOW),
                     superstructure
                 )
             );
@@ -116,8 +141,8 @@ public class RobotContainer {
         leftTrigger
             .and(rightTrigger.negate())
             .whileTrue(
-                new RunCommand(() ->
-                    superstructure.setDesiredState(DesiredState.INTAKE),
+                new RunCommand(
+                    () -> superstructure.setDesiredState(DesiredState.INTAKE),
                     superstructure
                 )
             );
@@ -125,15 +150,15 @@ public class RobotContainer {
         rightTrigger
             .and(leftTrigger.negate())
             .whileTrue(
-                new RunCommand(() ->
-                    superstructure.setDesiredState(DesiredState.SHOOT),
+                new RunCommand(
+                    () -> superstructure.setDesiredState(DesiredState.SHOOT),
                     superstructure
                 )
             );
 
         leftBumper.whileTrue(
-            new RunCommand(() ->
-                superstructure.setDesiredState(DesiredState.OUTTAKE),
+            new RunCommand(
+                () -> superstructure.setDesiredState(DesiredState.OUTTAKE),
                 superstructure
             )
         );
@@ -142,21 +167,33 @@ public class RobotContainer {
 
         //back.onTrue(new InstantCommand( () -> extension.setMotorZero()));
         // a.onTrue(new InstantCommand(extension::extend, extension));
-        // b.onTrue(new InstantCommand(extension::stow, extension));
-        b.whileTrue(new RunCommand(indexer::feed, indexer));
-        x.onTrue(new InstantCommand(indexer::stop));
+        b.onTrue(new InstantCommand(superstructure::stowIntake));
+        a.onTrue(new InstantCommand(extension::zero));
+        x.onTrue(new InstantCommand(turret::zero));
+        // b.whileTrue(new RunCommand(indexer::feed, indexer));
+        // x.onTrue(new InstantCommand(indexer::stop));
         // x.onTrue(new InstantCommand(indexer::stop));
         // a.whileTrue(hood.home());
         // x.whileTrue(drivetrain.applyRequest(() -> brake));
         // a.onTrue(new InstantCommand(superstructure::stowIntake));
 
-
         // OPERATOR OVERRIDES
-        oa.onTrue(new InstantCommand(superstructure::toggleTurretMode));
-        oy.onTrue(new InstantCommand(() -> superstructure.setTurretSetpoint(Degrees.of(0))));
-        ox.onTrue(new InstantCommand(() -> superstructure.setTurretSetpoint(Degrees.of(90))));
-        ob.onTrue(new InstantCommand(() -> superstructure.setTurretSetpoint(Degrees.of(270))));
-
+        oa.onTrue(new InstantCommand(turret::setEncoderZero));
+        oy.onTrue(
+            new InstantCommand(() ->
+                superstructure.setTurretSetpoint(Degrees.of(0))
+            )
+        );
+        ox.onTrue(
+            new InstantCommand(() ->
+                superstructure.setTurretSetpoint(Degrees.of(-90))
+            )
+        );
+        ob.onTrue(
+            new InstantCommand(() ->
+                superstructure.setTurretSetpoint(Degrees.of(90))
+            )
+        );
 
         // DEFAULT COMMANDS
 
@@ -167,15 +204,15 @@ public class RobotContainer {
             )
         );
 
-        drivetrain.setDefaultCommand(tdrive);
+        //  drivetrain.setDefaultCommand(tdrive);
 
-        // drivetrain.setDefaultCommand(
-        //     drivetrain.applyRequest(() ->
-        //         drive.withVelocityX(-driverXbox.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
-        //             .withVelocityY(-driverXbox.getLeftX() * MaxSpeed) // Drive left with negative X (left)
-        //             .withRotationalRate(-driverXbox.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
-        //     )
-        // );
+        drivetrain.setDefaultCommand(
+            drivetrain.applyRequest(() ->
+                drive.withVelocityX(-driverXbox.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
+                    .withVelocityY(-driverXbox.getLeftX() * MaxSpeed) // Drive left with negative X (left)
+                    .withRotationalRate(-driverXbox.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
+            )
+        );
         final var idle = new SwerveRequest.Idle();
         RobotModeTriggers.disabled().whileTrue(
             drivetrain.applyRequest(() -> idle).ignoringDisable(true)
