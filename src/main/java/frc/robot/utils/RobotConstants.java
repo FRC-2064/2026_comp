@@ -2,16 +2,13 @@ package frc.robot.utils;
 
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.MetersPerSecond;
-import static edu.wpi.first.units.Units.MetersPerSecondPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.Seconds;
 
 import com.ctre.phoenix6.CANBus;
 
 import edu.wpi.first.units.measure.Angle;
-import edu.wpi.first.units.measure.AngularVelocity;
-import edu.wpi.first.units.measure.LinearAcceleration;
-import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.generated.TunerConstants;
@@ -26,28 +23,9 @@ public class RobotConstants {
         return TelemetryVerbosity.LOW;
     }
 
-    public static class DriveConstants {
+    public static final double MAX_SPEED = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
+    public static final double MAX_ROT = RotationsPerSecond.of(0.75).in(RadiansPerSecond);
 
-        private final double MaxSpeed =
-            1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
-
-        public static final LinearVelocity MAX_DRIVE_SPEED = MetersPerSecond.of(
-            5.23
-        );
-        public static final AngularVelocity MAX_ROT_SPEED = RadiansPerSecond.of(
-            Math.PI * 1.5
-        );
-
-        public static final LinearVelocity FAST_DRIVE_SPEED =
-            MAX_DRIVE_SPEED.times(1.5);
-        public static final AngularVelocity FAST_ROT_SPEED =
-            MAX_ROT_SPEED.times(1.5);
-
-        public static final LinearAcceleration MAX_ACCEL =
-            MetersPerSecondPerSecond.of(3.0);
-
-        public static final double DEADBAND = 0.1;
-    }
 
     public static class SuperstructureConstants {
 

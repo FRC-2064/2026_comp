@@ -6,7 +6,6 @@ import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.units.measure.Angle;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.shooterSubsystem.ShooterConstants.HoodConstants;
 import frc.robot.utils.RobotConstants;
@@ -82,6 +81,10 @@ public class Hood extends SubsystemBase {
 
     public Angle getCurrentAngle() {
         return hood.getAngle();
+    }
+
+    public void zero() {
+        motor.setEncoderPosition(Degrees.zero());
     }
 
     public boolean atPosition() {

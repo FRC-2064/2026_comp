@@ -2,6 +2,8 @@ package frc.robot.subsystems.shooterSubsystem;
 
 import static edu.wpi.first.units.Units.*;
 
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.measure.*;
@@ -10,8 +12,10 @@ import yams.gearing.MechanismGearing;
 
 public class ShooterConstants {
 
-    public static final Translation3d ROBOT_CENTER_TO_SHOOTER =
-        new Translation3d(Inches.of(0), Inches.of(0), Inches.of(0));
+    public static final Transform3d ROBOT_CENTER_TO_SHOOTER =
+        new Transform3d(
+            new Translation3d(Inches.of(-5.375), Inches.of(-1.25), Inches.of(12.385)),
+            new Rotation3d(Degrees.zero(), Degrees.zero(), Degrees.of(180)));
 
     public static class FlyWheelConstants {
 
@@ -66,7 +70,7 @@ public class ShooterConstants {
         public static final int MOTOR_ID = 30;
         public static final DCMotor MOTOR_TYPE = DCMotor.getKrakenX44(1);
 
-        public static final Distance LENGTH = Meters.zero();
+        public static final Distance LENGTH = Inches.one();
         public static final Mass WEIGHT = Pounds.of(10);
         public static final MechanismGearing GEARING = new MechanismGearing(
             GearBox.fromReductionStages(32)

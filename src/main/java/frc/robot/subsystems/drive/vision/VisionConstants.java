@@ -21,16 +21,37 @@ public class VisionConstants {
     public static final String LIMELIGHT_NAME = "limelight-one";
 
     public static final Transform3d ROBOT_TO_LEFT_CAM = new Transform3d(
-        new Translation3d(Inches.of(-11.62), Inches.of(11.81), Inches.of(7.84)),
-        new Rotation3d(Degrees.of(0), Degrees.of(-15), Degrees.of(135)));
+        new Translation3d(
+            Inches.of(-11.62),
+            Inches.of(11.81),
+            Inches.of(7.84)),
+        new Rotation3d(
+            Degrees.of(0),
+            Degrees.of(-15),
+            Degrees.of(135)
+        )
+    );
 
     public static final Transform3d ROBOT_TO_RIGHT_CAM = new Transform3d(
-        new Translation3d(Inches.of(11.62), Inches.of(11.81), Inches.of(7.84)),
-        new Rotation3d(Degrees.of(0), Degrees.of(-15), Degrees.of(225)));;
+        new Translation3d(
+            Inches.of(-11.62),
+            Inches.of(-11.81),
+            Inches.of(7.84)),
+        new Rotation3d(
+            Degrees.of(0),
+            Degrees.of(-15),
+            Degrees.of(225))
+    );
 
     public static final Transform3d ROBOT_TO_CENTER_CAM = new Transform3d(
-        new Translation3d(Inches.of(-12.56), Inches.of(1.45), Inches.of(11.34)),
-        new Rotation3d(Degrees.of(0), Degrees.of(-10), Degrees.of(180))
+        new Translation3d(
+            Inches.of(-12.56),
+            Inches.of(1.45),
+            Inches.of(11.34)),
+        new Rotation3d(
+            Degrees.of(0),
+            Degrees.of(-10),
+            Degrees.of(180))
     );
 
     public static final Transform3d ROBOT_TO_LIMELIGHT_CAM = Transform3d.kZero;

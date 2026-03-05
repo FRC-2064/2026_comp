@@ -5,6 +5,8 @@ import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.networktables.StructPublisher;
 import frc.robot.utils.FieldConstants;
 import java.util.List;
 import java.util.Optional;
@@ -24,6 +26,8 @@ public class PVCamera implements VisionCamera {
     private boolean enabled;
     private Matrix<N3, N1> curStdDevs;
 
+    private final StructPublisher<Transform3d> transformPub;
+
     private PVCamera(PVCameraConfig config) {
         this.name = config.name;
         this.camera = new PhotonCamera(config.name);
@@ -37,6 +41,12 @@ public class PVCamera implements VisionCamera {
             FieldConstants.defaultAprilTagType.getLayout(),
             config.robotToCamera
         );
+
+        this.transformPub = NetworkTableInstance.getDefault()
+        .getStructTopic("vision/transforms/" +this.name, Transform3d.struct)
+        .publish();
+
+        this.transformPub.set(this.cameraPosition);
     }
 
     @Override

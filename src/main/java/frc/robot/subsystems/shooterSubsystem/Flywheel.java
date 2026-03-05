@@ -3,12 +3,9 @@ package frc.robot.subsystems.shooterSubsystem;
 import static edu.wpi.first.units.Units.RPM;
 
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.controls.Follower;
-import com.ctre.phoenix6.controls.StrictFollower;
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
-import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import edu.wpi.first.math.MathUtil;
@@ -27,7 +24,6 @@ public class Flywheel extends SubsystemBase {
     public Flywheel() {
         SmartDashboard.putNumber("shooter/targetSpeedTuning", 0);
         var c = new TalonFXConfiguration();
-        var fc = new TalonFXConfiguration();
 
         c.Slot0
         .withKP(FlyWheelConstants.P)
@@ -41,15 +37,10 @@ public class Flywheel extends SubsystemBase {
         c.MotorOutput.withNeutralMode(NeutralModeValue.Coast)
         .withInverted(InvertedValue.Clockwise_Positive);
 
-        fc.MotorOutput.withInverted(InvertedValue.CounterClockwise_Positive);
-
-
         flywheelMotor.getConfigurator().apply(c);
-        followerMotor.getConfigurator().apply(fc);
 
-        // followerMotor.setControl(new StrictFollower(FlyWheelConstants.LEADER_ID));
-
-        followerMotor.setControl(new Follower(FlyWheelConstants.LEADER_ID, MotorAlignmentValue.Opposed));
+        c.MotorOutput.withInverted(InvertedValue.CounterClockwise_Positive);
+        followerMotor.getConfigurator().apply(c);
     }
 
 
@@ -63,14 +54,14 @@ public class Flywheel extends SubsystemBase {
         );
         this.targetSpeed = s;
         flywheelMotor.setControl(fr.withVelocity(s));
-        // followerMotor.setControl(new Follower(FlyWheelConstants.LEADER_ID, MotorAlignmentValue.Opposed));
+        followerMotor.setControl(fr.withVelocity(s));
 
     }
 
     public void stop() {
         this.targetSpeed = RPM.zero();
         flywheelMotor.stopMotor();
-        // followerMotor.setControl(new Follower(FlyWheelConstants.LEADER_ID, MotorAlignmentValue.Opposed));
+        followerMotor.stopMotor();
 
     }
 
