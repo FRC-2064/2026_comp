@@ -74,10 +74,11 @@ public class RobotContainer {
 
         // OPERATOR BUTTONS
 
-        final var oa = operatorXbox.a(); // zero turret encoder
-        final var ob = operatorXbox.b(); // turret right (90)
-        final var ox = operatorXbox.x(); // turret left (-90)
-        final var oy = operatorXbox.y(); // turret center (0)
+        final var oa = operatorXbox.a();
+        final var ob = operatorXbox.b();
+        final var ox = operatorXbox.x();
+        final var oy = operatorXbox.y();
+        final var oLeftBumber = operatorXbox.leftBumper();
 
         // TRIGGERS
 
@@ -93,10 +94,11 @@ public class RobotContainer {
 
         // OPERATOR OVERRIDES
 
-        oa.onTrue(bcmd.teleop.zeroTurret);
-        oy.onTrue(bcmd.teleop.turretCenter);
-        ox.onTrue(bcmd.teleop.turretLeft);
-        ob.onTrue(bcmd.teleop.turretRight);
+        oa.onTrue(bcmd.teleop.rigthTrench);
+        oy.onTrue(bcmd.teleop.leftTrench);
+        ox.onTrue(bcmd.teleop.tower);
+        ob.onTrue(bcmd.teleop.depot);
+        oLeftBumber.onTrue(bcmd.teleop.humanPlayer);
 
         // DEFAULT COMMANDS
 

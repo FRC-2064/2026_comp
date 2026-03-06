@@ -29,7 +29,7 @@ public class RobotConstants {
 
     public static class SuperstructureConstants {
 
-        public static final double READY_TO_SHOOT_DEBOUNCE_SECONDS = 2;
+        public static final double READY_TO_SHOOT_DEBOUNCE_SECONDS = 0.5;
 
         public static final Time KICKER_CLEAR_TIMER = Seconds.of(0.25);
 

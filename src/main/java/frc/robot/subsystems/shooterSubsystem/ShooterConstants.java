@@ -29,10 +29,11 @@ public class ShooterConstants {
         public static final AngularVelocity MAX_VELOCITY = RPM.of(5000);
         public static final AngularVelocity TOLERANCE = RPM.of(200);
 
-        public static final double P = 10.0;
-        public static final double I = 2.0;
+        public static final double P = 4.5;
+        public static final double I = 0.0;
         public static final double D = 0.0;
-        public static final double S = 2.5;
+        public static final double S = 3.75;
+        public static final double V = 0.013;
     }
 
     public static class HoodConstants {

@@ -1,6 +1,7 @@
 package frc.robot.commands;
 
 import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.RPM;
 
 import java.util.Map;
 
@@ -16,6 +17,7 @@ import frc.robot.subsystems.Superstructure;
 import frc.robot.subsystems.Superstructure.DesiredState;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 import frc.robot.utils.RobotConstants;
+import frc.robot.utils.ShooterCalc.ShooterSolution;
 
 public class BasicCommands {
 
@@ -117,7 +119,7 @@ public class BasicCommands {
             superstructure::zeroTurret
         );
 
-        // TURRET OVERRIDES
+        // MANUEL SHOOTER CONTROL
 
         public final Command toggleTurretMode = new InstantCommand(
             superstructure::toggleTurretMode
@@ -130,6 +132,21 @@ public class BasicCommands {
         );
         public final Command turretRight = new InstantCommand(
             () -> superstructure.setTurretSetpoint(Degrees.of(90))
+        );
+        public final Command rigthTrench = new InstantCommand(
+            () -> superstructure.setManuelSol(new ShooterSolution(Degrees.of(90), Degrees.of(12), RPM.of(3000)))
+        );
+        public final Command leftTrench = new InstantCommand(
+            () -> superstructure.setManuelSol(new ShooterSolution(Degrees.of(90), Degrees.of(12), RPM.of(3000)))
+        );
+        public final Command tower = new InstantCommand(
+            () -> superstructure.setManuelSol(new ShooterSolution(Degrees.of(90), Degrees.of(12), RPM.of(3000)))
+        );
+        public final Command depot = new InstantCommand(
+            () -> superstructure.setManuelSol(new ShooterSolution(Degrees.of(90), Degrees.of(12), RPM.of(3000)))
+        );
+        public final Command humanPlayer = new InstantCommand(
+            () -> superstructure.setManuelSol(new ShooterSolution(Degrees.of(90), Degrees.of(12), RPM.of(3000)))
         );
 
         // DRIVE

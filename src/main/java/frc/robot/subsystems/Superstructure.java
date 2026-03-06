@@ -65,8 +65,9 @@ public class Superstructure extends SubsystemBase {
 
     private DesiredState desiredState = DesiredState.IDLE;
     private State currentState = State.IDLING;
-    private TurretMode turretMode = TurretMode.MANUAL;
+    private TurretMode turretMode = TurretMode.AUTO;
 
+    private ShooterSolution manualSolution =  new ShooterSolution(Degrees.zero(), Degrees.zero(), RPM.zero());
     private boolean isReadyToShoot = false;
     private double speedMult = 1.0;
 
@@ -114,11 +115,20 @@ public class Superstructure extends SubsystemBase {
 
         currentState = determineCurrentState();
 
-        var solution = shooterCalc.getSelectedSolution();
-        SmartDashboard.putNumber("Turret/SolutionOutput", solution.turretAngle().in(Degrees));
+        // var solution = shooterCalc.getSelectedSolution();
+        // SmartDashboard.putNumber("Turret/SolutionOutput", solution.turretAngle().in(Degrees));
 
-        updateTurret(solution);
-        updateShooter(solution);
+        // if (turretMode == TurretMode.MANUAL){
+        //     solution = manualSolution;
+        // }
+
+
+        //var sol = new ShooterSolution(Degrees.zero(), Degrees.of(8), RPM.of(5000)); TURRET SOLUTION
+        //var sol = new ShooterSolution(Degrees.zero(), Degrees.of(8), RPM.of(4500)); TOWER SOLUTION
+        var sol = new ShooterSolution(Degrees.zero(), Degrees.of(10), RPM.of(5250));
+
+        updateTurret(sol);
+        updateShooter(sol);
         updateTelemetry();
     }
 
@@ -148,8 +158,6 @@ public class Superstructure extends SubsystemBase {
     // STATES
 
     private void updateShooter(ShooterSolution sol) {
-        var s = new ShooterSolution(Degrees.zero(), Degrees.zero(), RPM.of(2750));
-
         switch (currentState) {
             case IDLING:
                 idling();
@@ -162,11 +170,11 @@ public class Superstructure extends SubsystemBase {
                 break;
             case SHOOTING_SPINUP:
             case SHOOTING_FEED:
-                shoot(s);
+                shoot(sol);
                 break;
             case SNOWBLOW_SPINUP:
             case SNOWBLOW_FEED:
-                snowblow(s);
+                snowblow(sol);
                 break;
             case CLEARING_KICKER:
                 clear();
@@ -361,6 +369,10 @@ public class Superstructure extends SubsystemBase {
 
     public void toggleTurretMode() {
         turretMode = turretMode == TurretMode.AUTO ? TurretMode.MANUAL : TurretMode.AUTO;
+    }
+
+    public void setManuelSol(ShooterSolution manuelSol){
+        manualSolution = manuelSol;
     }
 
     // ZEROING
