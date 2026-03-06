@@ -1,8 +1,5 @@
 package frc.robot.commands;
 
-import static edu.wpi.first.units.Units.Degrees;
-import static edu.wpi.first.units.Units.RPM;
-
 import java.util.Map;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
@@ -17,7 +14,7 @@ import frc.robot.subsystems.Superstructure;
 import frc.robot.subsystems.Superstructure.DesiredState;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 import frc.robot.utils.RobotConstants;
-import frc.robot.utils.ShooterCalc.ShooterSolution;
+import frc.robot.utils.RobotConstants.ShooterSolutions;
 
 public class BasicCommands {
 
@@ -124,29 +121,23 @@ public class BasicCommands {
         public final Command toggleTurretMode = new InstantCommand(
             superstructure::toggleTurretMode
         );
-        public final Command turretCenter = new InstantCommand(
-            () -> superstructure.setTurretSetpoint(Degrees.zero())
-        );
-        public final Command turretLeft = new InstantCommand(
-            () -> superstructure.setTurretSetpoint(Degrees.of(-90))
-        );
-        public final Command turretRight = new InstantCommand(
-            () -> superstructure.setTurretSetpoint(Degrees.of(90))
+        public final Command toggleShooterMode = new InstantCommand(
+            superstructure::toggleShooterMode
         );
         public final Command rigthTrench = new InstantCommand(
-            () -> superstructure.setManuelSol(new ShooterSolution(Degrees.of(90), Degrees.of(12), RPM.of(3000)))
+            () -> superstructure.setManuelSol(ShooterSolutions.TRENCH_RIGHT)
         );
         public final Command leftTrench = new InstantCommand(
-            () -> superstructure.setManuelSol(new ShooterSolution(Degrees.of(90), Degrees.of(12), RPM.of(3000)))
+            () -> superstructure.setManuelSol(ShooterSolutions.TRENCH_LEFT)
         );
         public final Command tower = new InstantCommand(
-            () -> superstructure.setManuelSol(new ShooterSolution(Degrees.of(90), Degrees.of(12), RPM.of(3000)))
+            () -> superstructure.setManuelSol(ShooterSolutions.TOWER)
         );
         public final Command depot = new InstantCommand(
-            () -> superstructure.setManuelSol(new ShooterSolution(Degrees.of(90), Degrees.of(12), RPM.of(3000)))
+            () -> superstructure.setManuelSol(ShooterSolutions.DEPOT)
         );
         public final Command humanPlayer = new InstantCommand(
-            () -> superstructure.setManuelSol(new ShooterSolution(Degrees.of(90), Degrees.of(12), RPM.of(3000)))
+            () -> superstructure.setManuelSol(ShooterSolutions.HUMAN_PLAYER)
         );
 
         // DRIVE

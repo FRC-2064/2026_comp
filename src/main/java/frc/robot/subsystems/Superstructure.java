@@ -32,6 +32,11 @@ public class Superstructure extends SubsystemBase {
         MANUAL
     }
 
+    public enum ShooterMode {
+        AUTO,
+        MANUAL
+    }
+
     public enum DesiredState {
         IDLE,
         INTAKE,
@@ -66,6 +71,7 @@ public class Superstructure extends SubsystemBase {
     private DesiredState desiredState = DesiredState.IDLE;
     private State currentState = State.IDLING;
     private TurretMode turretMode = TurretMode.AUTO;
+    private ShooterMode shooterMode = ShooterMode.AUTO;
 
     private ShooterSolution manualSolution =  new ShooterSolution(Degrees.zero(), Degrees.zero(), RPM.zero());
     private boolean isReadyToShoot = false;
@@ -115,17 +121,19 @@ public class Superstructure extends SubsystemBase {
 
         currentState = determineCurrentState();
 
-        // var solution = shooterCalc.getSelectedSolution();
-        // SmartDashboard.putNumber("Turret/SolutionOutput", solution.turretAngle().in(Degrees));
+        ShooterSolution sol;
 
-        // if (turretMode == TurretMode.MANUAL){
-        //     solution = manualSolution;
-        // }
+        switch (shooterMode) {
+            case MANUAL:
+                sol = manualSolution;
+                break;
 
+            case AUTO:
+            default:
+                sol = shooterCalc.getSelectedSolution();
+                break;
+        }
 
-        //var sol = new ShooterSolution(Degrees.zero(), Degrees.of(8), RPM.of(5000)); TURRET SOLUTION
-        //var sol = new ShooterSolution(Degrees.zero(), Degrees.of(8), RPM.of(4500)); TOWER SOLUTION
-        var sol = new ShooterSolution(Degrees.zero(), Degrees.of(10), RPM.of(5250));
 
         updateTurret(sol);
         updateShooter(sol);
@@ -371,8 +379,13 @@ public class Superstructure extends SubsystemBase {
         turretMode = turretMode == TurretMode.AUTO ? TurretMode.MANUAL : TurretMode.AUTO;
     }
 
+    public void toggleShooterMode() {
+        shooterMode = shooterMode == ShooterMode.AUTO ? ShooterMode.MANUAL : ShooterMode.AUTO;
+    }
+
     public void setManuelSol(ShooterSolution manuelSol){
         manualSolution = manuelSol;
+        shooterMode = ShooterMode.MANUAL;
     }
 
     // ZEROING

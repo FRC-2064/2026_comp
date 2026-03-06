@@ -66,39 +66,42 @@ public class RobotContainer {
 
         // DRIVER BUTTONS
 
-        final var leftTrigger  = driverXbox.leftTrigger().debounce(0.25);  // intake
-        final var rightTrigger = driverXbox.rightTrigger().debounce(0.25); // shoot
-        final var leftBumper   = driverXbox.leftBumper();                  // outtake
-        final var a            = driverXbox.a();                           // stow intake
-        final var x            = driverXbox.x();                           // lock drive
+        final var lt = driverXbox.leftTrigger().debounce(0.25);    // intake
+        final var rt = driverXbox.rightTrigger().debounce(0.25);   // shoot
+        final var lb = driverXbox.leftBumper();                    // outtake
+        final var a  = driverXbox.a();                             // stow intake
+        final var x  = driverXbox.x();                             // lock drive
 
         // OPERATOR BUTTONS
 
-        final var oa = operatorXbox.a();
-        final var ob = operatorXbox.b();
-        final var ox = operatorXbox.x();
-        final var oy = operatorXbox.y();
-        final var oLeftBumber = operatorXbox.leftBumper();
+        final var oa = operatorXbox.a();                           // human player
+        final var ob = operatorXbox.b();                           // right trench
+        final var ox = operatorXbox.x();                           // left trench
+        final var oy = operatorXbox.y();                           // tower
+        final var olb = operatorXbox.leftBumper();                 // depot
+        final var orb = operatorXbox.rightBumper();                // toggle shooter mode
+        final var olt = operatorXbox.leftTrigger().debounce(0.25); // toggle turret mode
 
         // TRIGGERS
 
-        leftTrigger.and(rightTrigger).whileTrue(bcmd.teleop.snowblow);
-        leftTrigger.and(rightTrigger.negate()).whileTrue(bcmd.teleop.intake);
-        rightTrigger.and(leftTrigger.negate()).whileTrue(bcmd.teleop.shoot);
-        leftBumper.whileTrue(bcmd.teleop.outtake);
+        lt.and(rt).whileTrue(bcmd.teleop.snowblow);
+        lt.and(rt.negate()).whileTrue(bcmd.teleop.intake);
+        rt.and(lt.negate()).whileTrue(bcmd.teleop.shoot);
 
         // BUTTONS
-
+        lb.whileTrue(bcmd.teleop.outtake);
         a.onTrue(bcmd.teleop.stowIntake);
         x.whileTrue(bcmd.teleop.lockDrive);
 
         // OPERATOR OVERRIDES
 
-        oa.onTrue(bcmd.teleop.rigthTrench);
-        oy.onTrue(bcmd.teleop.leftTrench);
-        ox.onTrue(bcmd.teleop.tower);
-        ob.onTrue(bcmd.teleop.depot);
-        oLeftBumber.onTrue(bcmd.teleop.humanPlayer);
+        oa.onTrue(bcmd.teleop.humanPlayer);
+        oy.onTrue(bcmd.teleop.tower);
+        ox.onTrue(bcmd.teleop.leftTrench);
+        ob.onTrue(bcmd.teleop.rigthTrench);
+        olb.onTrue(bcmd.teleop.depot);
+        orb.onTrue(bcmd.teleop.toggleShooterMode);
+        olt.onTrue(bcmd.teleop.toggleTurretMode);
 
         // DEFAULT COMMANDS
 

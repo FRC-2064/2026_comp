@@ -2,6 +2,7 @@ package frc.robot.utils;
 
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.RPM;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.Seconds;
@@ -12,9 +13,12 @@ import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.generated.TunerConstants;
+import frc.robot.utils.ShooterCalc.ShooterSolution;
 import yams.motorcontrollers.SmartMotorControllerConfig.TelemetryVerbosity;
 
 public class RobotConstants {
+
+    public static final CANBus CANIVORE = new CANBus("Comp");
 
     public static TelemetryVerbosity GetTelemetry() {
         if (RobotBase.isSimulation()) {
@@ -43,5 +47,20 @@ public class RobotConstants {
         public static final Angle MANUAL_TURRET_RATE = Degrees.of(3);
     }
 
-    public static final CANBus CANIVORE = new CANBus("Comp");
+    public static class ShooterSolutions {
+        public static final ShooterSolution DEPOT = new ShooterSolution(
+            Degrees.of(10), Degrees.of(10), RPM.of(5250));
+
+        public static final ShooterSolution TRENCH_LEFT = new ShooterSolution(
+            Degrees.of(90), Degrees.of(8), RPM.of(5000));
+
+        public static final ShooterSolution TRENCH_RIGHT = new ShooterSolution(
+            Degrees.of(-90), Degrees.of(8), RPM.of(5000));
+
+        public static final ShooterSolution TOWER = new ShooterSolution(
+            Degrees.zero(), Degrees.of(8), RPM.of(4500));
+
+        public static final ShooterSolution HUMAN_PLAYER = new ShooterSolution(
+            Degrees.of(0), Degrees.of(10), RPM.of(5250));
+    }
 }
