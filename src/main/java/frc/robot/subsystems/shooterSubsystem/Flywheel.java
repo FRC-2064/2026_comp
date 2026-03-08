@@ -32,7 +32,8 @@ public class Flywheel extends SubsystemBase {
         .withKS(FlyWheelConstants.S);
 
         c.CurrentLimits.withStatorCurrentLimit(FlyWheelConstants.STATOR_LIMIT)
-        .withStatorCurrentLimitEnable(true);
+        .withStatorCurrentLimitEnable(true)
+        .withSupplyCurrentLimit(FlyWheelConstants.SUPPLY_LIMIT);
 
         c.MotorOutput.withNeutralMode(NeutralModeValue.Coast)
         .withInverted(InvertedValue.Clockwise_Positive);

@@ -6,6 +6,7 @@ import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.shooterSubsystem.ShooterConstants.HoodConstants;
 import frc.robot.utils.RobotConstants;
@@ -94,6 +95,8 @@ public class Hood extends SubsystemBase {
     @Override
     public void periodic() {
         hood.updateTelemetry();
+        SmartDashboard.putNumber("hood/desiredAngle", targetAngle.in(Degrees));
+        SmartDashboard.putNumber("hood/current", hood.getAngle().in(Degrees));
     }
 
     @Override

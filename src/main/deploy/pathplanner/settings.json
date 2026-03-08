@@ -4,9 +4,13 @@
   "holonomicMode": true,
   "pathFolders": [
     "Left Trench",
+    "Center",
     "Right Trench"
   ],
-  "autoFolders": [],
+  "autoFolders": [
+    "Left Trench",
+    "Right Trench"
+  ],
   "defaultMaxVel": 3.0,
   "defaultMaxAccel": 3.0,
   "defaultMaxAngVel": 540.0,

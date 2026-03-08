@@ -82,15 +82,9 @@ public class ShooterCalc {
         new InterpolatingDoubleTreeMap();
 
     static {
-        add(1.5, 2800, 35, 0.38);
-        add(2.0, 3100, 38, 0.45);
-        add(2.5, 3400, 42, 0.52);
-        add(3.0, 3650, 46, 0.60);
-        add(3.5, 3900, 50, 0.68);
-        add(4.0, 4100, 54, 0.76);
-        add(4.5, 4350, 58, 0.85);
-        add(5.0, 4550, 62, 0.94);
-        add(6.0, 5000, 65, 1.10);
+        add(3.39, 5000, 8, 0);
+        add(4.37, 5250, 10, 0);
+        add(3.15, 4500, 8, 0);
     }
 
     private static void add(double dist, double rpm, double hood, double tof) {

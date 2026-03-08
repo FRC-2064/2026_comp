@@ -34,6 +34,7 @@ public class RobotConstants {
     public static class SuperstructureConstants {
 
         public static final double READY_TO_SHOOT_DEBOUNCE_SECONDS = 0.5;
+        public static final double CONTINUE_SHOOT_DEBOUNCE_SECONDS = 2.0;
 
         public static final Time KICKER_CLEAR_TIMER = Seconds.of(0.25);
 
@@ -49,18 +50,18 @@ public class RobotConstants {
 
     public static class ShooterSolutions {
         public static final ShooterSolution DEPOT = new ShooterSolution(
-            Degrees.of(10), Degrees.of(10), RPM.of(5250));
+            Degrees.of(-26), Degrees.of(10), RPM.of(5250));
 
         public static final ShooterSolution TRENCH_LEFT = new ShooterSolution(
-            Degrees.of(90), Degrees.of(8), RPM.of(5000));
+            Degrees.of(90), Degrees.of(8), RPM.of(5500));
 
         public static final ShooterSolution TRENCH_RIGHT = new ShooterSolution(
-            Degrees.of(-90), Degrees.of(8), RPM.of(5000));
+            Degrees.of(-90), Degrees.of(8), RPM.of(5500));
 
         public static final ShooterSolution TOWER = new ShooterSolution(
-            Degrees.zero(), Degrees.of(8), RPM.of(4500));
+        Degrees.zero(), Degrees.of(8), RPM.of(5100));
 
         public static final ShooterSolution HUMAN_PLAYER = new ShooterSolution(
-            Degrees.of(0), Degrees.of(10), RPM.of(5250));
+            Degrees.of(45), Degrees.of(10), RPM.of(5250));
     }
 }

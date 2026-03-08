@@ -14,6 +14,7 @@ import frc.robot.subsystems.Superstructure;
 import frc.robot.subsystems.Superstructure.DesiredState;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 import frc.robot.utils.RobotConstants;
+import frc.robot.utils.FieldConstants.LeftTrench;
 import frc.robot.utils.RobotConstants.ShooterSolutions;
 
 public class BasicCommands {
@@ -62,12 +63,32 @@ public class BasicCommands {
             superstructure
         );
 
+        public final Command setLeftTrench = new InstantCommand(
+            () -> superstructure.setManuelSol(ShooterSolutions.TRENCH_LEFT)
+        );
+
+        public final Command setRightTrench = new InstantCommand(
+            () -> superstructure.setManuelSol(ShooterSolutions.TRENCH_RIGHT)
+        );
+
+        public final Command setDepot = new InstantCommand(
+            () -> superstructure.setManuelSol(ShooterSolutions.DEPOT)
+        );
+
+        public final Command setTower = new InstantCommand(
+            () -> superstructure.setManuelSol(ShooterSolutions.TOWER)
+        );
+
         public void registerAll() {
             NamedCommands.registerCommands(Map.of(
                 "intake",   intake,
                 "snowblow", snowblow,
                 "shoot",    shoot,
-                "stow",     stow
+                "stow",     stow,
+                "leftTrench", setLeftTrench,
+                "rightTrench", setRightTrench,
+                "depot", setDepot,
+                "tower", setTower
             ));
         }
     }

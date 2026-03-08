@@ -17,7 +17,8 @@ public class IntakeRollers extends SubsystemBase {
     public IntakeRollers() {
        var c = new TalonFXConfiguration();
 
-       c.CurrentLimits.withStatorCurrentLimit(IntakeRollerConstants.STATOR_LIMIT)
+       c.CurrentLimits.withSupplyCurrentLimit(IntakeRollerConstants.SUPPLY_LIMIT)
+       .withStatorCurrentLimit(IntakeRollerConstants.STATOR_LIMIT)
        .withStatorCurrentLimitEnable(true);
 
        c.MotorOutput.withNeutralMode(NeutralModeValue.Coast)

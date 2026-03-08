@@ -6,6 +6,7 @@ import static edu.wpi.first.units.Units.Rotations;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.shooterSubsystem.ShooterConstants.TurretConstants;
 import frc.robot.utils.RobotConstants;
@@ -117,6 +118,7 @@ public class Turret extends SubsystemBase {
     @Override
     public void periodic() {
         turret.updateTelemetry();
+        SmartDashboard.putNumber("turret/angle", turret.getAngle().in(Degrees));
     }
 
     @Override

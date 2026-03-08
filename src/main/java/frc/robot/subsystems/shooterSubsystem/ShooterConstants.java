@@ -25,8 +25,9 @@ public class ShooterConstants {
         public static final double GEAR_RATIO = 1.0;
 
         public static final Current STATOR_LIMIT = Amps.of(100);
+        public static final Current SUPPLY_LIMIT = Amps.of(60);
         public static final AngularVelocity MIN_VELOCITY = RPM.of(0);
-        public static final AngularVelocity MAX_VELOCITY = RPM.of(5000);
+        public static final AngularVelocity MAX_VELOCITY = RPM.of(5500);
         public static final AngularVelocity TOLERANCE = RPM.of(200);
 
         public static final double P = 4.5;
@@ -61,7 +62,7 @@ public class ShooterConstants {
         );
         public static final AngularAcceleration MAX_ACCELERATION =
             DegreesPerSecondPerSecond.of(1800);
-        public static final Current STATOR_LIMIT = Amps.of(40);
+        public static final Current STATOR_LIMIT = Amps.of(20);
     }
 
     public static class TurretConstants {
@@ -88,7 +89,7 @@ public class ShooterConstants {
         public static final AngularVelocity MAX_VEL = DegreesPerSecond.of(900);
         public static final AngularAcceleration MAX_ACCEL =
             DegreesPerSecondPerSecond.of(1800);
-        public static final Current STATOR_LIMIT = Amps.of(60);
+        public static final Current STATOR_LIMIT = Amps.of(40);
 
         public static final Angle ENCODER_14_OFFSET = Rotations.of(0);
         public static final Angle ENCODER_13_OFFSET = Rotations.of(0);

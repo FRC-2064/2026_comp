@@ -35,7 +35,8 @@ public class IntakeExtension extends SubsystemBase {
 
         c.Feedback.withSensorToMechanismRatio(IntakeConstants.RACK_GEARING);
 
-        c.CurrentLimits.withStatorCurrentLimit(IntakeConstants.STATOR_LIMIT)
+        c.CurrentLimits.withSupplyCurrentLimit(IntakeConstants.SUPPLY_LIMIT)
+        .withStatorCurrentLimit(IntakeConstants.STATOR_LIMIT)
         .withStatorCurrentLimitEnable(true);
 
         c.MotorOutput.withNeutralMode(NeutralModeValue.Coast);

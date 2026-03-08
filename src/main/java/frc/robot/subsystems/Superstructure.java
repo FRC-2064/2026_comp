@@ -84,9 +84,6 @@ public class Superstructure extends SubsystemBase {
 
     // TIMERS
 
-    private final Debouncer readyToShootDebouncer = new Debouncer(
-        SuperstructureConstants.READY_TO_SHOOT_DEBOUNCE_SECONDS
-    );
     private final Timer kickerClearTimer = new Timer();
 
     // CONSTRUCTOR
@@ -114,29 +111,10 @@ public class Superstructure extends SubsystemBase {
 
     @Override
     public void periodic() {
-        boolean ready = flywheel.isUpToSpeed()
-            && hood.atPosition()
-            && turret.atPosition();
-        isReadyToShoot = readyToShootDebouncer.calculate(ready);
-
         currentState = determineCurrentState();
 
-        ShooterSolution sol;
-
-        switch (shooterMode) {
-            case MANUAL:
-                sol = manualSolution;
-                break;
-
-            case AUTO:
-            default:
-                sol = shooterCalc.getSelectedSolution();
-                break;
-        }
-
-
-        updateTurret(sol);
-        updateShooter(sol);
+        updateTurret(manualSolution);
+        updateShooter(manualSolution);
         updateTelemetry();
     }
 
@@ -176,11 +154,13 @@ public class Superstructure extends SubsystemBase {
             case OUTTAKING:
                 outtake();
                 break;
+            case SNOWBLOW_SPINUP:
             case SHOOTING_SPINUP:
+                spinup(sol);
+                break;
             case SHOOTING_FEED:
                 shoot(sol);
                 break;
-            case SNOWBLOW_SPINUP:
             case SNOWBLOW_FEED:
                 snowblow(sol);
                 break;
@@ -192,6 +172,7 @@ public class Superstructure extends SubsystemBase {
 
     private void idling() {
         speedMult = SuperstructureConstants.STOW_SPEED;
+        isReadyToShoot = false;
         rollers.stop();
         indexer.stop();
         flywheel.stop();
@@ -218,6 +199,13 @@ public class Superstructure extends SubsystemBase {
 
     private void clear() {
         indexer.clear();
+    }
+
+    private void spinup(ShooterSolution sol) {
+        hood.setTargetAngle(sol.hoodAngle());
+        flywheel.setTargetSpeed(sol.flywheelVelocity());
+
+        isReadyToShoot = flywheel.isUpToSpeed() && hood.atPosition() && turret.atPosition();
     }
 
     private void shoot(ShooterSolution sol) {
@@ -395,7 +383,7 @@ public class Superstructure extends SubsystemBase {
     }
 
     public void zeroTurret() {
-        turret.zero();
+        // turret.zero();
     }
 
     public void zeroExtension() {

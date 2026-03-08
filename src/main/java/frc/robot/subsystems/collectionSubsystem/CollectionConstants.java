@@ -9,9 +9,10 @@ public class CollectionConstants {
         public static final int ROLLER_ID = 33;
 
         // INTAKE ROLLER SPEEDS
-        public static final double INTAKE = 0.50;
+        public static final double INTAKE = 0.65;
         public static final double OUTTAKE = -0.25;
         public static final Current STATOR_LIMIT = Amps.of(60);
+        public static final Current SUPPLY_LIMIT = Amps.of(40);
     }
 
     public static class IntakeConstants {
@@ -34,7 +35,8 @@ public class CollectionConstants {
         public static final AngularVelocity MM_CRUISE_VEL = RotationsPerSecond.of(1);
         public static final AngularAcceleration MM_ACCEL = RotationsPerSecondPerSecond.of(2);
 
-        public static final Current STATOR_LIMIT = Amps.of(60);
+        public static final Current STATOR_LIMIT = Amps.of(50);
+        public static final Current SUPPLY_LIMIT = Amps.of(40);
     }
 
     public static class IndexerConstants {
@@ -43,7 +45,7 @@ public class CollectionConstants {
         // SPINDEXER SPEEDS
         public static final double FEED = 0.25;
         public static final double OUTTAKE = -0.25;
-        public static final Current STATOR_LIMIT = Amps.of(40);
+        public static final Current STATOR_LIMIT = Amps.of(35);
     }
 
     public static class KickerConstants {
@@ -54,6 +56,6 @@ public class CollectionConstants {
         // KICKER SPEEDS
         public static final double FEED = 0.35;
         public static final double OUTTAKE = -0.25;
-        public static final int CURRENT_LIMIT = 40;
+        public static final int CURRENT_LIMIT = 35;
     }
 }
