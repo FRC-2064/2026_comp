@@ -3,25 +3,19 @@ package frc.robot.subsystems;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.RPM;
 
-import java.util.function.DoubleSupplier;
-
-import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.filter.Debouncer;
-import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.collectionSubsystem.Indexer;
 import frc.robot.subsystems.collectionSubsystem.IntakeExtension;
 import frc.robot.subsystems.collectionSubsystem.IntakeRollers;
-import frc.robot.subsystems.drive.vision.Vision;
 import frc.robot.subsystems.shooterSubsystem.Flywheel;
 import frc.robot.subsystems.shooterSubsystem.Hood;
 import frc.robot.subsystems.shooterSubsystem.Turret;
-import frc.robot.utils.Liana.LianaHelpers;
 import frc.robot.utils.RobotConstants.SuperstructureConstants;
 import frc.robot.utils.ShooterCalc;
 import frc.robot.utils.ShooterCalc.ShooterSolution;
+import frc.robot.utils.Liana.LianaHelpers;
 
 public class Superstructure extends SubsystemBase {
 
@@ -64,23 +58,14 @@ public class Superstructure extends SubsystemBase {
     private final Hood hood;
     private final Turret turret;
     private final Flywheel flywheel;
-    private final ShooterCalc shooterCalc;
 
     // STATE
-
     private DesiredState desiredState = DesiredState.IDLE;
     private State currentState = State.IDLING;
-    private TurretMode turretMode = TurretMode.AUTO;
-    private ShooterMode shooterMode = ShooterMode.AUTO;
 
-    private ShooterSolution manualSolution =  new ShooterSolution(Degrees.zero(), Degrees.zero(), RPM.zero());
+    private ShooterSolution currentSolution = new ShooterSolution(Degrees.zero(), Degrees.zero(), RPM.zero());
     private boolean isReadyToShoot = false;
     private double speedMult = 1.0;
-
-    // TURRET
-
-    private Angle manualTurretSetpoint = Degrees.zero();
-    private final DoubleSupplier manualTurretAxisSupplier;
 
     // TIMERS
 
@@ -88,62 +73,33 @@ public class Superstructure extends SubsystemBase {
 
     // CONSTRUCTOR
 
-    public Superstructure(
-        IntakeExtension extension,
-        IntakeRollers rollers,
-        Indexer indexer,
-        Hood hood,
-        Turret turret,
-        Flywheel flywheel,
-        ShooterCalc shooterCalc,
-        Vision vision,
-        DoubleSupplier turretSupplier
-    ) {
-        this.extension = extension;
-        this.rollers = rollers;
-        this.indexer = indexer;
-        this.hood = hood;
-        this.turret = turret;
-        this.flywheel = flywheel;
-        this.shooterCalc = shooterCalc;
-        this.manualTurretAxisSupplier = turretSupplier;
+    public Superstructure() {
+    turret = new Turret();
+    hood = new Hood();
+    flywheel = new Flywheel();
+    extension = new IntakeExtension();
+    rollers = new IntakeRollers();
+    indexer = new Indexer();
     }
 
     @Override
     public void periodic() {
         currentState = determineCurrentState();
 
-        updateTurret(manualSolution);
-        updateShooter(manualSolution);
+        updateTurret();
+        updateShooter();
         updateTelemetry();
     }
 
     // TURRET CONTROL
 
-    private void updateTurret(ShooterSolution solution) {
-        switch (turretMode) {
-            case MANUAL:
-                double axis = MathUtil.applyDeadband(
-                    manualTurretAxisSupplier.getAsDouble(),
-                    SuperstructureConstants.MANUAL_TURRET_DEADBAND
-                );
-                if (Math.abs(axis) > 0) {
-                    manualTurretSetpoint = manualTurretSetpoint
-                        .plus(SuperstructureConstants.MANUAL_TURRET_RATE.times(axis));
-                }
-                turret.setTargetAngle(manualTurretSetpoint);
-                break;
-
-            case AUTO:
-                turret.setTargetAngle(solution.turretAngle());
-                manualTurretSetpoint = solution.turretAngle();
-                break;
-        }
+    private void updateTurret() {
+        turret.setTargetAngle(currentSolution.turretAngle());
     }
 
     // STATES
 
-    private void updateShooter(ShooterSolution sol) {
+    private void updateShooter() {
         switch (currentState) {
             case IDLING:
                 idling();
@@ -156,13 +112,13 @@ public class Superstructure extends SubsystemBase {
                 break;
             case SNOWBLOW_SPINUP:
             case SHOOTING_SPINUP:
-                spinup(sol);
+                spinup(currentSolution);
                 break;
             case SHOOTING_FEED:
-                shoot(sol);
+                shoot(currentSolution);
                 break;
             case SNOWBLOW_FEED:
-                snowblow(sol);
+                snowblow(currentSolution);
                 break;
             case CLEARING_KICKER:
                 clear();
@@ -340,16 +296,8 @@ public class Superstructure extends SubsystemBase {
         return currentState;
     }
 
-    public TurretMode getTurretMode() {
-        return turretMode;
-    }
-
     public double getSpeedMultiplier() {
         return speedMult;
-    }
-
-    public ShooterSolution getCurrentSolution() {
-        return shooterCalc.getSelectedSolution();
     }
 
     // SETTERS
@@ -357,23 +305,23 @@ public class Superstructure extends SubsystemBase {
     public void setDesiredState(DesiredState state) {
         this.desiredState = state;
     }
-
+/*
     public void setTurretSetpoint(Angle setpoint) {
         this.manualTurretSetpoint = setpoint;
         this.turretMode = TurretMode.MANUAL;
     }
-
-    public void toggleTurretMode() {
-        turretMode = turretMode == TurretMode.AUTO ? TurretMode.MANUAL : TurretMode.AUTO;
+*/
+    public ShooterSolution getShooterSolution() {
+        //return shooterCalc.getSelectedSolution();
+        return currentSolution;
     }
 
-    public void toggleShooterMode() {
-        shooterMode = shooterMode == ShooterMode.AUTO ? ShooterMode.MANUAL : ShooterMode.AUTO;
-    }
-
-    public void setManuelSol(ShooterSolution manuelSol){
-        manualSolution = manuelSol;
-        shooterMode = ShooterMode.MANUAL;
+    /***
+     * Set a manual shooter solution and change the turrent control to manual
+     * @param solution
+     */
+    public void setShooterSolution(ShooterSolution solution){
+        currentSolution = solution;
     }
 
     // ZEROING
@@ -403,8 +351,6 @@ public class Superstructure extends SubsystemBase {
         SmartDashboard.putBoolean("Superstructure/FlywheelReady", flywheel.isUpToSpeed());
         SmartDashboard.putBoolean("Superstructure/HoodReady", hood.atPosition());
         SmartDashboard.putBoolean("Superstructure/TurretReady", turret.atPosition());
-        SmartDashboard.putString("Superstructure/TurretMode", turretMode.name());
-        SmartDashboard.putNumber("Superstructure/TurretManualAngle", manualTurretSetpoint.in(Degrees));
 
         LianaHelpers.updateGameTime();
     }

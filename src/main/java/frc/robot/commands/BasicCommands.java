@@ -6,6 +6,7 @@ import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.pathplanner.lib.auto.NamedCommands;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
@@ -16,12 +17,15 @@ import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 import frc.robot.utils.RobotConstants;
 import frc.robot.utils.FieldConstants.LeftTrench;
 import frc.robot.utils.RobotConstants.ShooterSolutions;
+import frc.robot.utils.RobotConstants.SuperstructureConstants;
+import frc.robot.utils.ShooterCalc.ShooterSolution;
 
 public class BasicCommands {
 
     private final Superstructure superstructure;
     private final CommandSwerveDrivetrain drivetrain;
     private final CommandXboxController driver;
+    private final CommandXboxController operator;
 
     public final AutoCommands auto;
     public final TeleopCommands teleop;
@@ -29,11 +33,13 @@ public class BasicCommands {
     public BasicCommands(
         Superstructure superstructure,
         CommandSwerveDrivetrain drivetrain,
-        CommandXboxController driver
+        CommandXboxController driver,
+        CommandXboxController operator
     ) {
         this.superstructure = superstructure;
         this.drivetrain = drivetrain;
         this.driver = driver;
+        this.operator = operator;
         this.auto = new AutoCommands();
         this.teleop = new TeleopCommands();
     }
@@ -64,19 +70,19 @@ public class BasicCommands {
         );
 
         public final Command setLeftTrench = new InstantCommand(
-            () -> superstructure.setManuelSol(ShooterSolutions.TRENCH_LEFT)
+            () -> superstructure.setShooterSolution(ShooterSolutions.TRENCH_LEFT)
         );
 
         public final Command setRightTrench = new InstantCommand(
-            () -> superstructure.setManuelSol(ShooterSolutions.TRENCH_RIGHT)
+            () -> superstructure.setShooterSolution(ShooterSolutions.TRENCH_RIGHT)
         );
 
         public final Command setDepot = new InstantCommand(
-            () -> superstructure.setManuelSol(ShooterSolutions.DEPOT)
+            () -> superstructure.setShooterSolution(ShooterSolutions.DEPOT)
         );
 
         public final Command setTower = new InstantCommand(
-            () -> superstructure.setManuelSol(ShooterSolutions.TOWER)
+            () -> superstructure.setShooterSolution(ShooterSolutions.TOWER)
         );
 
         public void registerAll() {
@@ -96,6 +102,7 @@ public class BasicCommands {
     // TELEOP COMMANDS
 
     public class TeleopCommands {
+        private boolean manualTargeting = false;
 
         private TeleopCommands() {}
 
@@ -139,27 +146,47 @@ public class BasicCommands {
 
         // MANUEL SHOOTER CONTROL
 
-        public final Command toggleTurretMode = new InstantCommand(
-            superstructure::toggleTurretMode
-        );
-        public final Command toggleShooterMode = new InstantCommand(
-            superstructure::toggleShooterMode
-        );
-        public final Command rigthTrench = new InstantCommand(
-            () -> superstructure.setManuelSol(ShooterSolutions.TRENCH_RIGHT)
+        public final Command rightTrench = new InstantCommand(
+            () -> superstructure.setShooterSolution(ShooterSolutions.TRENCH_RIGHT)
         );
         public final Command leftTrench = new InstantCommand(
-            () -> superstructure.setManuelSol(ShooterSolutions.TRENCH_LEFT)
+            () -> superstructure.setShooterSolution(ShooterSolutions.TRENCH_LEFT)
         );
         public final Command tower = new InstantCommand(
-            () -> superstructure.setManuelSol(ShooterSolutions.TOWER)
+            () -> superstructure.setShooterSolution(ShooterSolutions.TOWER)
         );
         public final Command depot = new InstantCommand(
-            () -> superstructure.setManuelSol(ShooterSolutions.DEPOT)
+            () -> superstructure.setShooterSolution(ShooterSolutions.DEPOT)
         );
         public final Command humanPlayer = new InstantCommand(
-            () -> superstructure.setManuelSol(ShooterSolutions.HUMAN_PLAYER)
+            () -> superstructure.setShooterSolution(ShooterSolutions.HUMAN_PLAYER)
         );
+        
+
+        // MANUAL TARGETING
+        public final Command toggleManualTargeting = new InstantCommand(
+            () -> manualTargeting = !manualTargeting
+        );
+        
+        public final Command adjustTurret = new RunCommand(
+            () -> {}
+            /*
+            () -> {double axis = MathUtil.applyDeadband(
+                    operator.getLeftX(),
+                    SuperstructureConstants.MANUAL_TURRET_DEADBAND
+                );
+                if (Math.abs(axis) > 0) {
+                    ShooterSolution solution = superstructure.getCurrentSolution();
+                    solution.turretAngle().s manualTurretSetpoint = manualTurretSetpoint
+                        .plus(SuperstructureConstants.MANUAL_TURRET_RATE.times(axis));
+                }
+                turret.setTargetAngle(manualTurretSetpoint);
+            });
+*/        
+        );
+        public boolean isManualTargeting() {
+            return manualTargeting;
+        }
 
         // DRIVE
 

@@ -1,24 +1,20 @@
 package frc.robot;
 
+import java.util.function.BooleanSupplier;
+
 import com.pathplanner.lib.auto.AutoBuilder;
-import com.pathplanner.lib.commands.PathPlannerAuto;
 
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.commands.BasicCommands;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.Superstructure;
-import frc.robot.subsystems.collectionSubsystem.Indexer;
-import frc.robot.subsystems.collectionSubsystem.IntakeExtension;
-import frc.robot.subsystems.collectionSubsystem.IntakeRollers;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 import frc.robot.subsystems.drive.vision.Vision;
-import frc.robot.subsystems.shooterSubsystem.Flywheel;
-import frc.robot.subsystems.shooterSubsystem.Hood;
-import frc.robot.subsystems.shooterSubsystem.Turret;
 import frc.robot.utils.RobotConstants;
 import frc.robot.utils.ShooterCalc;
 
@@ -31,12 +27,6 @@ public class RobotContainer {
 
     // SUBSYSTEMS
 
-    private final Turret turret = new Turret();
-    private final Hood hood = new Hood();
-    private final Flywheel flywheel = new Flywheel();
-    private final IntakeExtension extension = new IntakeExtension();
-    private final IntakeRollers rollers = new IntakeRollers();
-    private final Indexer indexer = new Indexer();
     private final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
 
     // UTILITIES
@@ -47,19 +37,9 @@ public class RobotContainer {
 
     // SUPERSTRUCTURE
 
-    private final Superstructure superstructure = new Superstructure(
-        extension,
-        rollers,
-        indexer,
-        hood,
-        turret,
-        flywheel,
-        calc,
-        vision,
-        () -> operatorXbox.getLeftX()
-    );
+    private final Superstructure superstructure = new Superstructure();
 
-    private final BasicCommands bcmd = new BasicCommands(superstructure, drivetrain, driverXbox);
+    private final BasicCommands bcmd = new BasicCommands(superstructure, drivetrain, driverXbox, operatorXbox);
     private final Telemetry logger = new Telemetry(RobotConstants.MAX_SPEED);
 
     public RobotContainer() {
@@ -89,6 +69,11 @@ public class RobotContainer {
         final var orb = operatorXbox.rightBumper();                // toggle shooter mode
         final var olt = operatorXbox.leftTrigger().debounce(0.25); // toggle turret mode
 
+        // MANUAL TARGETING STATE
+
+        BooleanSupplier manualTargetSupplier = bcmd.teleop::isManualTargeting;
+        final var manualTargetTrigger = new Trigger(manualTargetSupplier);
+
         // TRIGGERS
 
         lt.and(rt).whileTrue(bcmd.teleop.snowblow);
@@ -105,11 +90,25 @@ public class RobotContainer {
         ob.onTrue(bcmd.teleop.humanPlayer);
         oa.onTrue(bcmd.teleop.tower);
         olb.onTrue(bcmd.teleop.leftTrench);
-        orb.onTrue(bcmd.teleop.rigthTrench);
+        orb.onTrue(bcmd.teleop.rightTrench);
         ox.onTrue(bcmd.teleop.depot);
-        oy.onTrue(bcmd.teleop.toggleShooterMode);
-        olt.onTrue(bcmd.teleop.toggleTurretMode);
+        oy.onTrue(bcmd.teleop.toggleManualTargeting);
+        //olt.onTrue(bcmd.teleop.toggleTurretMode);
 
+        // TURRET COMMANDS
+        manualTargetTrigger.whileTrue(bcmd.teleop.adjustTurret);
+        /*
+        switch (turretMode) {
+            case MANUAL:
+                break;
+
+            case AUTO:
+                turret.setTargetAngle(solution.turretAngle());
+                manualTurretSetpoint = solution.turretAngle();
+                break;
+        }
+        
+         */
         // DEFAULT COMMANDS
 
         superstructure.setDefaultCommand(bcmd.teleop.idle);
