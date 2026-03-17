@@ -4,19 +4,21 @@ import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.RPM;
+
+import com.ctre.phoenix6.swerve.SwerveDrivetrain.SwerveDriveState;
+
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.interpolation.InterpolatingTreeMap;
 import edu.wpi.first.math.interpolation.InverseInterpolator;
-import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.networktables.StructPublisher;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
-import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 import frc.robot.subsystems.shooterSubsystem.ShooterConstants;
 import frc.robot.subsystems.shooterSubsystem.ShooterConstants.TurretConstants;
 import frc.robot.utils.FieldConstants.Hub;
@@ -25,31 +27,6 @@ import frc.robot.utils.FieldConstants.Tower;
 import frc.robot.utils.Liana.LianaHelpers;
 
 public class ShooterCalc {
-
-    private StructPublisher<Translation2d> targetPublisher =
-        NetworkTableInstance.getDefault()
-            .getStructTopic("ShooterCalc/Target", Translation2d.struct)
-            .publish();
-
-    private StructPublisher<Translation2d> targetShot =
-        NetworkTableInstance.getDefault()
-            .getStructTopic("ShooterCalc/TargetShot", Translation2d.struct)
-            .publish();
-
-    private StructPublisher<Translation2d> turretPosPublisher =
-        NetworkTableInstance.getDefault()
-            .getStructTopic("ShooterCalc/TurretPos", Translation2d.struct)
-            .publish();
-
-    private StructPublisher<Translation2d> targetPublisher2 =
-        NetworkTableInstance.getDefault()
-            .getStructTopic("ShooterCalc/LookaheadPos", Translation2d.struct)
-            .publish();
-
-    private StructPublisher<Transform3d> transformPub = NetworkTableInstance.getDefault()
-        .getStructTopic("shootercalc/turretLoc", Transform3d.struct)
-        .publish();
-
 
     public record FullShooterParams(double rpm, double hood, double tof) {
         public static FullShooterParams interpolate(
@@ -69,7 +46,19 @@ public class ShooterCalc {
         Angle turretAngle,
         Angle hoodAngle,
         AngularVelocity flywheelVelocity
-    ) {}
+    ) {
+        public static ShooterSolution zero() {
+            return new ShooterSolution(Degrees.zero(), Degrees.zero(), RPM.zero());
+        }
+
+        public ShooterSolution withTurretAngle(Angle turretAngle) {
+            return new ShooterSolution(
+                turretAngle,
+                hoodAngle(),
+                flywheelVelocity()
+            );
+        }
+    }
 
     private static final InterpolatingTreeMap<
         Double,
@@ -92,106 +81,101 @@ public class ShooterCalc {
         if (tof > 0) REVERSE_MAP.put(dist / tof, dist);
     }
 
-    private final CommandSwerveDrivetrain drive;
     private static final double LATENCY = 0.06;
 
-    public ShooterCalc(CommandSwerveDrivetrain drive) {
-        this.drive = drive;
 
-        transformPub.set(ShooterConstants.ROBOT_CENTER_TO_SHOOTER);
-    }
+    public static Translation2d getTarget(Pose2d pose) {
+        var logicalPose = AllianceFlip.apply(pose);
+        Translation2d targetLogical;
 
-    public ShooterSolution getSelectedSolution() {
-        var state = drive.getState();
-        Pose2d pose = state.Pose;
+        var halfSize = Inches.of(13.75).in(Meters);
+        var bumperOffset =
+        halfSize * Math.abs(logicalPose.getRotation().getCos()) +
+        halfSize * Math.abs(logicalPose.getRotation().getSin());
 
-        var turretZeroInFieldFrame = pose.getRotation()
-            .plus(new Rotation2d(
-                ShooterConstants.ROBOT_CENTER_TO_SHOOTER.getRotation().getZ()
-            ));
+        var minX = logicalPose.getX() - bumperOffset;
 
-        var turretMountOffset = ShooterConstants.ROBOT_CENTER_TO_SHOOTER
-            .getTranslation()
-            .toTranslation2d()
-            .rotateBy(pose.getRotation());
-
-        double omega = state.Speeds.omegaRadiansPerSecond;
-        double tanVelX = -omega * ShooterConstants.ROBOT_CENTER_TO_SHOOTER.getTranslation().getY();
-        double tanVelY =  omega * ShooterConstants.ROBOT_CENTER_TO_SHOOTER.getTranslation().getX();
-
-        Translation2d robotRelativeTurretVel = new Translation2d(
-            state.Speeds.vxMetersPerSecond + tanVelX,
-            state.Speeds.vyMetersPerSecond + tanVelY
-        );
-
-        double speed = Math.hypot(
-            state.Speeds.vxMetersPerSecond,
-            state.Speeds.vyMetersPerSecond
-        );
-        Translation2d robotVel = speed > 0.05
-            ? robotRelativeTurretVel.rotateBy(pose.getRotation())
-            : Translation2d.kZero;
-
-        Translation2d latencyOffset = robotVel.times(LATENCY);
-        Translation2d turretPos = pose.getTranslation()
-            .plus(turretMountOffset)
-            .plus(latencyOffset);
-
-        Translation2d target = getTarget(pose);
-        Translation2d lookaheadPos = turretPos;
-        double lookaheadDist = target.getDistance(turretPos);
-
-        for (int i = 0; i < 20; i++) {
-            double tof = SHOOTER_MAP.get(lookaheadDist).tof();
-            Translation2d offset = robotVel.times(tof);
-            lookaheadPos = turretPos.plus(offset);
-            lookaheadDist = target.getDistance(lookaheadPos);
+        if (minX < LinesVertical.ALLIANCE_ZONE) {
+            targetLogical = Hub.INNER_CENTER_POINT.toTranslation2d();
+        } else {
+            var tarX = Tower.FRONT_FACE_X;
+            var tarY = logicalPose.getY();
+            targetLogical = new Translation2d(tarX, tarY);
         }
 
-        Translation2d toGoal = target.minus(lookaheadPos);
-        Rotation2d turretAngle = toGoal.getAngle().minus(turretZeroInFieldFrame);
+        return AllianceFlip.apply(targetLogical);
 
-        FullShooterParams params = SHOOTER_MAP.get(lookaheadDist);
+    }
 
-        targetShot.set(toGoal);
-        turretPosPublisher.set(turretPos);
-        targetPublisher2.set(lookaheadPos);
+
+    public static ShooterSolution getSelectedSolution(SwerveDriveState state) {
+        var pose = state.Pose;
+
+        var vx = state.Speeds.vxMetersPerSecond;
+        var vy = state.Speeds.vyMetersPerSecond;
+        var omega = state.Speeds.omegaRadiansPerSecond;
+
+        // calc the pose after the latency
+        var estimatedPose = pose.exp(
+            new Twist2d(vx * LATENCY, vy * LATENCY, omega * LATENCY)
+        );
+
+        // transform the pose to the turret
+        var turretPose = estimatedPose.transformBy(new Transform2d(ShooterConstants.TURRET_MOUNT_OFFSET, Rotation2d.kZero));
+
+        // get field relative turret vel
+        var fieldSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(vx, vy, omega, estimatedPose.getRotation());
+
+        // tangent vel of turret
+        var turretTangentVelRobotRelative = new Translation2d(
+            -omega * ShooterConstants.TURRET_MOUNT_OFFSET.getY(),
+            -omega * ShooterConstants.TURRET_MOUNT_OFFSET.getX()
+        );
+
+        // rotate vel to field frame
+        var turretTangentVelFieldRelative = turretTangentVelRobotRelative.rotateBy(estimatedPose.getRotation());
+        var turretVel = new Translation2d(fieldSpeeds.vxMetersPerSecond, fieldSpeeds.vyMetersPerSecond)
+            .plus(turretTangentVelFieldRelative);
+
+        // account for robot vel
+        var targetTrans = getTarget(estimatedPose);
+        var lookaheadPose = turretPose;
+        var lookaheadDist = targetTrans.getDistance(turretPose.getTranslation());
+
+        for (int i = 0; i < 5; i++) {
+            var tof = SHOOTER_MAP.get(lookaheadDist).tof();
+            var offset = turretVel.times(tof);
+
+            var newLookaheadTranslation = turretPose.getTranslation().plus(offset);
+
+            if (newLookaheadTranslation.getDistance(lookaheadPose.getTranslation()) < 0.01) {
+                lookaheadPose = new Pose2d(newLookaheadTranslation, turretPose.getRotation());
+                lookaheadDist = targetTrans.getDistance(lookaheadPose.getTranslation());
+                break;
+            }
+
+            lookaheadPose = new Pose2d(newLookaheadTranslation, turretPose.getRotation());
+            lookaheadDist = targetTrans.getDistance(lookaheadPose.getTranslation());
+        }
+
+        var toGoal = targetTrans.minus(lookaheadPose.getTranslation());
+        var turretZeroInFieldFrame = estimatedPose.getRotation().plus(ShooterConstants.TURRET_ZERO_HEADING);
+
+        var turretAngle = toGoal.getAngle().minus(turretZeroInFieldFrame);
+
+        var params = SHOOTER_MAP.get(lookaheadDist);
 
         return new ShooterSolution(
             Degrees.of(
                 MathUtil.clamp(
-                    turretAngle.getDegrees() + LianaHelpers.getTurretAngleAdjustment(),
+                    turretAngle.plus(Rotation2d.fromDegrees(LianaHelpers.getTurretAngleAdjustment())).getDegrees(),
                     TurretConstants.MIN_ANGLE.in(Degrees),
                     TurretConstants.MAX_ANGLE.in(Degrees)
                 )
             ),
             Degrees.of(params.hood() + LianaHelpers.getHoodAngleAdjustment()),
-            RPM.of(params.rpm() + LianaHelpers.getFlywheelAdjustment())
+           RPM.of(params.rpm() + LianaHelpers.getFlywheelAdjustment())
         );
-    }
-
-    private Translation2d getTarget(Pose2d pose) {
-        Pose2d logicalPose = AllianceFlip.apply(pose);
-        Translation2d targetLogical;
-
-        double halfSize = Inches.of(13.75).in(Meters);
-        double bumperOffset =
-            halfSize * Math.abs(logicalPose.getRotation().getCos()) +
-            halfSize * Math.abs(logicalPose.getRotation().getSin());
-
-        double minX = logicalPose.getX() - bumperOffset;
-
-        if (minX < LinesVertical.allianceZone) {
-            targetLogical = Hub.innerCenterPoint.toTranslation2d();
-        } else {
-
-            double tarX = Tower.frontFaceX;
-            double tarY = logicalPose.getY();
-            targetLogical = new Translation2d(tarX, tarY);
-        }
-        var ret = AllianceFlip.apply(targetLogical);
-        targetPublisher.set(ret);
-        return ret;
     }
 
 }

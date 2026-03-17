@@ -1,9 +1,15 @@
 package frc.robot.subsystems.drive.vision;
 
+import com.ctre.phoenix6.swerve.SwerveDrivetrain.SwerveDriveState;
+
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 import frc.robot.subsystems.drive.vision.VisionCamera.MeasurementConsumer;
+import frc.robot.subsystems.drive.vision.VisionConstants.CameraConstants;
+import frc.robot.subsystems.drive.vision.VisionConstants.SimulationConstants;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -22,6 +28,7 @@ public class Vision extends SubsystemBase {
         this.cameras = new ArrayList<>();
         this.drive = drive;
 
+        // Restored: The consumer that actually passes vision data to the drivetrain
         MeasurementConsumer consumer = measurement -> {
             if (measurement.isValid()) {
                 drive.addVisionMeasurement(
@@ -34,42 +41,35 @@ public class Vision extends SubsystemBase {
 
         initCameras(consumer);
 
-        if (RobotBase.isSimulation()) setupSim();
+        if (RobotBase.isSimulation()) {
+            setupSim();
+        }
     }
 
     private void initCameras(MeasurementConsumer consumer) {
         cameras.add(
-            new PVCamera.PVCameraConfig(VisionConstants.LEFT_CAMERA_NAME)
-                .withTransform(VisionConstants.ROBOT_TO_LEFT_CAM)
-                .setEnabled(VisionConstants.ENABLE_LEFT_CAMERA)
+            new PVCamera.PVCameraConfig(CameraConstants.LEFT_CAMERA_NAME)
+                .withTransform(CameraConstants.ROBOT_TO_LEFT_CAM)
+                .setEnabled(CameraConstants.ENABLE_LEFT_CAMERA)
                 .withMeasurementConsumer(consumer)
                 .build()
         );
 
         cameras.add(
-            new PVCamera.PVCameraConfig(VisionConstants.RIGHT_CAMERA_NAME)
-                .withTransform(VisionConstants.ROBOT_TO_RIGHT_CAM)
-                .setEnabled(VisionConstants.ENABLE_RIGHT_CAMERA)
+            new PVCamera.PVCameraConfig(CameraConstants.RIGHT_CAMERA_NAME)
+                .withTransform(CameraConstants.ROBOT_TO_RIGHT_CAM)
+                .setEnabled(CameraConstants.ENABLE_RIGHT_CAMERA)
                 .withMeasurementConsumer(consumer)
                 .build()
         );
 
         cameras.add(
-            new PVCamera.PVCameraConfig(VisionConstants.CENTER_CAMERA_NAME)
-                .withTransform(VisionConstants.ROBOT_TO_CENTER_CAM)
-                .setEnabled(VisionConstants.ENABLE_CENTER_CAMERA)
+            new PVCamera.PVCameraConfig(CameraConstants.CENTER_CAMERA_NAME)
+                .withTransform(CameraConstants.ROBOT_TO_CENTER_CAM)
+                .setEnabled(CameraConstants.ENABLE_CENTER_CAMERA)
                 .withMeasurementConsumer(consumer)
                 .build()
         );
-
-        // cameras.add(
-        //     new LLCamera.LLCameraConfig(VisionConstants.LIMELIGHT_NAME)
-        //         .withTransform(VisionConstants.ROBOT_TO_LIMELIGHT_CAM)
-        //         .setEnabled(VisionConstants.ENABLE_LIMELIGHT_CAMERA)
-        //         .withMegaTag2(VisionConstants.USE_MGT2)
-        //         .withMeasurementConsumer(consumer)
-        //         .build()
-        // );
     }
 
     private void setupSim() {
@@ -82,32 +82,36 @@ public class Vision extends SubsystemBase {
                 SimCameraProperties cameraProp = new SimCameraProperties();
 
                 cameraProp.setCalibration(
-                    VisionConstants.SIM_CAMERA_WIDTH,
-                    VisionConstants.SIM_CAMERA_HEIGHT,
-                    VisionConstants.SIM_CAMERA_FOV
+                    SimulationConstants.SIM_CAMERA_WIDTH,
+                    SimulationConstants.SIM_CAMERA_HEIGHT,
+                    SimulationConstants.SIM_CAMERA_FOV
                 );
 
                 cameraProp.setCalibError(
-                    VisionConstants.SIM_CALIB_AVG_ERROR,
-                    VisionConstants.SIM_CALIB_STD_DEV
+                    SimulationConstants.SIM_CALIB_AVG_ERROR,
+                    SimulationConstants.SIM_CALIB_STD_DEV
                 );
 
-                cameraProp.setFPS(VisionConstants.SIM_FPS);
-                cameraProp.setAvgLatencyMs(VisionConstants.SIM_AVG_LATENCY_MS);
-                cameraProp.setLatencyStdDevMs(
-                    VisionConstants.SIM_LATENCY_STD_DEV_MS
-                );
+                cameraProp.setFPS(SimulationConstants.SIM_FPS);
+                cameraProp.setAvgLatencyMs(SimulationConstants.SIM_AVG_LATENCY_MS);
+                cameraProp.setLatencyStdDevMs(SimulationConstants.SIM_LATENCY_STD_DEV_MS);
 
                 PhotonCameraSim camSim = new PhotonCameraSim(
                     pvCamera.getCamera(),
                     cameraProp
                 );
-                camSim.enableDrawWireframe(
-                    VisionConstants.SIM_ENABLE_WIREFRAME
-                );
-                visionSim.addCamera(camSim, pvCamera.getPosition());
+                camSim.enableDrawWireframe(SimulationConstants.SIM_ENABLE_WIREFRAME);
+                visionSim.addCamera(camSim, cam.getRobotToCamera());
             }
         }
+    }
+
+    public Pose2d getEstimatedPose() {
+        return drive.getState().Pose;
+    }
+
+    public SwerveDriveState getDriveState() {
+        return drive.getState();
     }
 
     @Override

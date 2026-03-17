@@ -16,22 +16,24 @@ import frc.robot.generated.TunerConstants;
 import frc.robot.utils.ShooterCalc.ShooterSolution;
 import yams.motorcontrollers.SmartMotorControllerConfig.TelemetryVerbosity;
 
-public class RobotConstants {
+public final class RobotConstants {
 
     public static final CANBus CANIVORE = new CANBus("Comp");
 
-    public static TelemetryVerbosity GetTelemetry() {
+    public static TelemetryVerbosity getTelemetryVerbosity() {
         if (RobotBase.isSimulation()) {
             return TelemetryVerbosity.HIGH;
         }
         return TelemetryVerbosity.LOW;
     }
 
-    public static final double MAX_SPEED = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
-    public static final double MAX_ROT = RotationsPerSecond.of(0.75).in(RadiansPerSecond);
+    public static final class DriveConstants {
+        public static final double MAX_SPEED = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
+        public static final double MAX_ROT = RotationsPerSecond.of(0.75).in(RadiansPerSecond);
+    }
 
 
-    public static class SuperstructureConstants {
+    public static final class SuperstructureConstants {
 
         public static final double READY_TO_SHOOT_DEBOUNCE_SECONDS = 0.5;
         public static final double CONTINUE_SHOOT_DEBOUNCE_SECONDS = 2.0;
@@ -48,7 +50,7 @@ public class RobotConstants {
         public static final Angle MANUAL_TURRET_RATE = Degrees.of(3);
     }
 
-    public static class ShooterSolutions {
+    public static final class ShooterSolutions {
         public static final ShooterSolution DEPOT = new ShooterSolution(
             Degrees.of(64), Degrees.of(10), RPM.of(5250));
 

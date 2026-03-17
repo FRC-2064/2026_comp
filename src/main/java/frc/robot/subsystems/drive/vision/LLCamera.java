@@ -5,6 +5,7 @@ import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import frc.robot.subsystems.drive.vision.VisionConstants.TrackingConstants;
 import frc.robot.utils.LimelightHelpers;
 import frc.robot.utils.LimelightHelpers.PoseEstimate;
 
@@ -17,13 +18,13 @@ public class LLCamera implements VisionCamera {
     private boolean enabled;
     private Matrix<N3, N1> curStdDevs;
 
-    private LLCamera(LLCameraConfig config) {
+    public LLCamera(LLCameraConfig config) {
         this.name = config.name;
         this.robotToCamera = config.robotToCamera;
         this.enabled = config.enabled;
         this.useMegaTag2 = config.useMT2;
         this.consumer = config.consumer;
-        this.curStdDevs = VisionConstants.SINGLE_TAG_STD_DEVS;
+        this.curStdDevs = TrackingConstants.SINGLE_TAG_STD_DEVS;
     }
 
     @Override
@@ -35,12 +36,12 @@ public class LLCamera implements VisionCamera {
             : LimelightHelpers.getBotPoseEstimate_wpiBlue(name);
 
         if (!LimelightHelpers.validPoseEstimate(estimate)) {
-            curStdDevs = VisionConstants.SINGLE_TAG_STD_DEVS;
+            curStdDevs = TrackingConstants.SINGLE_TAG_STD_DEVS;
             return;
         }
 
-        if (estimate.tagCount < VisionConstants.MIN_TAG_COUNT) {
-            curStdDevs = VisionConstants.SINGLE_TAG_STD_DEVS;
+        if (estimate.tagCount < TrackingConstants.MIN_TAG_COUNT) {
+            curStdDevs = TrackingConstants.SINGLE_TAG_STD_DEVS;
             return;
         }
 
@@ -64,10 +65,10 @@ public class LLCamera implements VisionCamera {
 
         Matrix<N3, N1> estStdDevs =
             numTags > 1
-                ? VisionConstants.MULTI_TAG_STD_DEVS
-                : VisionConstants.SINGLE_TAG_STD_DEVS;
+                ? TrackingConstants.MULTI_TAG_STD_DEVS
+                : TrackingConstants.SINGLE_TAG_STD_DEVS;
 
-        if (numTags == 1 && avgDist > VisionConstants.MAX_DETECTION_DISTANCE) {
+        if (numTags == 1 && avgDist > TrackingConstants.MAX_DETECTION_DISTANCE) {
             return VecBuilder.fill(
                 Double.MAX_VALUE,
                 Double.MAX_VALUE,
@@ -100,6 +101,7 @@ public class LLCamera implements VisionCamera {
         return curStdDevs;
     }
 
+    @Override
     public Transform3d getRobotToCamera() {
         return robotToCamera;
     }

@@ -7,7 +7,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-public class HubShiftUtil {
+public final class HubShiftUtil {
   public enum ShiftEnum {
     TRANSITION,
     SHIFT1,
@@ -22,18 +22,18 @@ public class HubShiftUtil {
   public record ShiftInfo(
       ShiftEnum currentShift, double elapsedTime, double remainingTime, boolean active) {}
 
-  private static Timer shiftTimer = new Timer();
-  private static final ShiftEnum[] shiftsEnums = ShiftEnum.values();
+  private static final Timer SHIFT_TIMER = new Timer();
+  private static final ShiftEnum[] SHIFT_ENUMS = ShiftEnum.values();
 
-  private static final double[] shiftStartTimes = {0.0, 10.0, 35.0, 60.0, 85.0, 110.0};
-  private static final double[] shiftEndTimes = {10.0, 35.0, 60.0, 85.0, 110.0, 140.0};
+  private static final double[] SHIFT_START_TIMES = {0.0, 10.0, 35.0, 60.0, 85.0, 110.0};
+  private static final double[] SHIFT_END_TIMES = {10.0, 35.0, 60.0, 85.0, 110.0, 140.0};
 
-  public static final double autoEndTime = 20.0;
-  public static final double teleopDuration = 140.0;
-  private static final boolean[] activeSchedule = {true, true, false, true, false, true};
-  private static final boolean[] inactiveSchedule = {true, false, true, false, true, true};
+  public static final double AUTO_END_TIME = 20.0;
+  public static final double TELEOP_DURATION = 140.0;
+  private static final boolean[] ACTIVE_SCHEDULE = {true, true, false, true, false, true};
+  private static final boolean[] INACTIVE_SCHEDULE = {true, false, true, false, true, true};
 
-  private static Supplier<Optional<Boolean>> allianceWinOverride = () -> Optional.empty();
+  private static Supplier<Optional<Boolean>> allianceWinOverride = Optional::empty;
 
   public static void setAllianceWinOverride(Supplier<Optional<Boolean>> override) {
     allianceWinOverride = override;
@@ -48,7 +48,7 @@ public class HubShiftUtil {
 
     // Return override value
     var winOverride = getAllianceWinOverride();
-    if (!winOverride.isEmpty()) {
+    if (winOverride.isPresent()) {
       return winOverride.get()
           ? (alliance == Alliance.Blue ? Alliance.Red : Alliance.Blue)
           : (alliance == Alliance.Blue ? Alliance.Blue : Alliance.Red);
@@ -71,7 +71,7 @@ public class HubShiftUtil {
 
   /** Starts the timer at the beginning of teleop. */
   public static void initialize() {
-    shiftTimer.restart();
+    SHIFT_TIMER.restart();
   }
 
   private static boolean[] getSchedule() {
@@ -79,21 +79,21 @@ public class HubShiftUtil {
     Alliance startAlliance = getFirstActiveAlliance();
     currentSchedule =
         startAlliance == DriverStation.getAlliance().orElse(Alliance.Blue)
-            ? activeSchedule
-            : inactiveSchedule;
+            ? ACTIVE_SCHEDULE
+            : INACTIVE_SCHEDULE;
     return currentSchedule;
   }
 
   private static ShiftInfo getShiftInfo(
       boolean[] currentSchedule, double[] shiftStartTimes, double[] shiftEndTimes) {
-    double currentTime = shiftTimer.get();
+    double currentTime = SHIFT_TIMER.get();
     double stateTimeElapsed = currentTime;
     double stateTimeRemaining = 0.0;
     boolean active = false;
     ShiftEnum currentShift = ShiftEnum.DISABLED;
 
     if (DriverStation.isAutonomousEnabled()) {
-      stateTimeRemaining = autoEndTime - currentTime;
+      stateTimeRemaining = AUTO_END_TIME - currentTime;
       active = true;
       currentShift = ShiftEnum.AUTO;
     } else if (DriverStation.isEnabled()) {
@@ -128,14 +128,14 @@ public class HubShiftUtil {
       }
 
       active = currentSchedule[currentShiftIndex];
-      currentShift = shiftsEnums[currentShiftIndex];
+      currentShift = SHIFT_ENUMS[currentShiftIndex];
     }
 
     return new ShiftInfo(currentShift, stateTimeElapsed, stateTimeRemaining, active);
   }
 
   public static ShiftInfo getOfficialShiftInfo() {
-    return getShiftInfo(getSchedule(), shiftStartTimes, shiftEndTimes);
+    return getShiftInfo(getSchedule(), SHIFT_START_TIMES, SHIFT_END_TIMES);
   }
 
   /**

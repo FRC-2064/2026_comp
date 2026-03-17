@@ -387,8 +387,4 @@ public class CommandSwerveDrivetrain
     public Optional<Pose2d> samplePoseAt(double timestampSeconds) {
         return super.samplePoseAt(Utils.fpgaToCurrentTime(timestampSeconds));
     }
-
-    public Pose2d getPose() {
-        return this.getState().Pose;
-    }
 }
