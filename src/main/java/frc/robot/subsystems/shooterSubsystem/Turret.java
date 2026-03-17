@@ -44,7 +44,7 @@ public class Turret extends SubsystemBase {
             TurretConstants.ENCODER_14_OFFSET
         )
         .withMatchTolerance(Rotations.of(0.06))
-        .withAbsoluteEncoderInversions(false, false);
+        .withAbsoluteEncoderInversions(true, true);
 
     private final EasyCRT solver = new EasyCRT(easyCRTConfig);
 
@@ -72,7 +72,7 @@ public class Turret extends SubsystemBase {
     private final PivotConfig turretConfig = new PivotConfig(motor)
         .withStartingPosition(TurretConstants.STARTING_POS)
         .withHardLimit(TurretConstants.MIN_ANGLE, TurretConstants.MAX_ANGLE)
-        .withSoftLimits(Degrees.of(-90), Degrees.of(90))
+        .withSoftLimits(Degrees.of(0), Degrees.of(180))
         .withTelemetry("Turret", RobotConstants.GetTelemetry())
         .withMOI(TurretConstants.LENGTH, TurretConstants.WEIGHT);
 
@@ -81,6 +81,7 @@ public class Turret extends SubsystemBase {
     private Angle targetAngle = Degrees.of(0);
 
     public Turret() {
+        var solver = new EasyCRT(easyCRTConfig);
         solver
             .getAngleOptional()
             .ifPresent(mechAngle -> {
@@ -90,6 +91,7 @@ public class Turret extends SubsystemBase {
     }
 
     public void setTargetAngle(Angle angle) {
+        angle.plus(Degrees.of(90));
         this.targetAngle = angle;
     }
 
@@ -119,6 +121,7 @@ public class Turret extends SubsystemBase {
     public void periodic() {
         turret.updateTelemetry();
         SmartDashboard.putNumber("turret/angle", turret.getAngle().in(Degrees));
+        SmartDashboard.putString("turret/status", solver.getLastStatus().toString());
     }
 
     @Override

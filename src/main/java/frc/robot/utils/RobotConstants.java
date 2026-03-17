@@ -50,18 +50,18 @@ public class RobotConstants {
 
     public static class ShooterSolutions {
         public static final ShooterSolution DEPOT = new ShooterSolution(
-            Degrees.of(-26), Degrees.of(10), RPM.of(5250));
+            Degrees.of(64), Degrees.of(10), RPM.of(5250));
 
         public static final ShooterSolution TRENCH_LEFT = new ShooterSolution(
-            Degrees.of(90), Degrees.of(8), RPM.of(5500));
+            Degrees.of(180), Degrees.of(8), RPM.of(5500));
 
         public static final ShooterSolution TRENCH_RIGHT = new ShooterSolution(
-            Degrees.of(-90), Degrees.of(8), RPM.of(5500));
+            Degrees.of(0), Degrees.of(8), RPM.of(5500));
 
         public static final ShooterSolution TOWER = new ShooterSolution(
-        Degrees.zero(), Degrees.of(8), RPM.of(5100));
+        Degrees.of(90), Degrees.of(8), RPM.of(4550));
 
         public static final ShooterSolution HUMAN_PLAYER = new ShooterSolution(
-            Degrees.of(45), Degrees.of(10), RPM.of(5250));
+            Degrees.of(135), Degrees.of(10), RPM.of(5250));
     }
 }

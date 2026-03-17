@@ -6,7 +6,6 @@ import static edu.wpi.first.units.Units.RPM;
 import java.util.function.DoubleSupplier;
 
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -113,8 +112,12 @@ public class Superstructure extends SubsystemBase {
     public void periodic() {
         currentState = determineCurrentState();
 
-        updateTurret(manualSolution);
-        updateShooter(manualSolution);
+        SmartDashboard.putString("Superstructure/Turret/Mode", turretMode.name());
+
+        var sol = shooterCalc.getSelectedSolution();
+
+        updateTurret(sol);
+        updateShooter(sol);
         updateTelemetry();
     }
 
@@ -123,17 +126,8 @@ public class Superstructure extends SubsystemBase {
     private void updateTurret(ShooterSolution solution) {
         switch (turretMode) {
             case MANUAL:
-                double axis = MathUtil.applyDeadband(
-                    manualTurretAxisSupplier.getAsDouble(),
-                    SuperstructureConstants.MANUAL_TURRET_DEADBAND
-                );
-                if (Math.abs(axis) > 0) {
-                    manualTurretSetpoint = manualTurretSetpoint
-                        .plus(SuperstructureConstants.MANUAL_TURRET_RATE.times(axis));
-                }
-                turret.setTargetAngle(manualTurretSetpoint);
-                break;
-
+            turret.setTargetAngle(manualSolution.turretAngle());
+            break;
             case AUTO:
                 turret.setTargetAngle(solution.turretAngle());
                 manualTurretSetpoint = solution.turretAngle();
@@ -205,62 +199,29 @@ public class Superstructure extends SubsystemBase {
         hood.setTargetAngle(sol.hoodAngle());
         flywheel.setTargetSpeed(sol.flywheelVelocity());
 
+        indexer.stop();
+
         isReadyToShoot = flywheel.isUpToSpeed() && hood.atPosition() && turret.atPosition();
     }
 
     private void shoot(ShooterSolution sol) {
-        shooterSequence(
-            sol,
-            SuperstructureConstants.SHOOT_SPEED,
-            false,
-            false,
-            State.SHOOTING_FEED
-        );
-    }
-
-    private void snowblow(ShooterSolution sol) {
-        shooterSequence(
-            sol,
-            SuperstructureConstants.SNOWBLOW_SPEED,
-            true,
-            true,
-            State.SNOWBLOW_FEED
-        );
-    }
-
-    private void shooterSequence(
-        ShooterSolution sol,
-        double speedMult,
-        boolean extendIntake,
-        boolean runRollers,
-        State feedState
-    ) {
-        this.speedMult = speedMult;
-
-        if (extendIntake) {
-            extension.extend();
-        } else {
-            if ((Timer.getFPGATimestamp() % 0.6) > 0.3) {
-                extension.extend();
-            } else {
-                extension.stow();
-            }
-        }
-
-        if (runRollers) {
-            rollers.intake();
-        } else {
-            rollers.stop();
-        }
-
         flywheel.setTargetSpeed(sol.flywheelVelocity());
         hood.setTargetAngle(sol.hoodAngle());
 
-        if (currentState == feedState) {
-            indexer.feed();
-        } else if (currentState != State.CLEARING_KICKER) {
-            indexer.stop();
-        }
+        extension.stow();
+        rollers.intake();
+
+        indexer.feed();
+    }
+
+    private void snowblow(ShooterSolution sol) {
+        flywheel.setTargetSpeed(sol.flywheelVelocity());
+        hood.setTargetAngle(sol.hoodAngle());
+        
+        extension.extend();
+        rollers.intake();
+
+        indexer.feed();
     }
 
     private State determineCurrentState() {
@@ -270,32 +231,15 @@ public class Superstructure extends SubsystemBase {
             case OUTTAKE:
                 return State.OUTTAKING;
             case SHOOT:
-                return resolveShooterState(State.SHOOTING_FEED, State.SHOOTING_SPINUP);
+                return isReadyToShoot ? State.SHOOTING_FEED : State.SHOOTING_SPINUP;
             case SNOWBLOW:
-                return resolveShooterState(State.SNOWBLOW_FEED, State.SNOWBLOW_SPINUP);
+                return isReadyToShoot ? State.SNOWBLOW_FEED : State.SNOWBLOW_SPINUP;
             case IDLE:
             default:
                 return resolveIdleState();
         }
     }
 
-    private State resolveShooterState(State feedState, State spinupState) {
-        if (currentState == feedState && !isReadyToShoot()) {
-            kickerClearTimer.restart();
-            return State.CLEARING_KICKER;
-        }
-
-        if (currentState == State.CLEARING_KICKER) {
-            if (!kickerClearTimer.hasElapsed(SuperstructureConstants.KICKER_CLEAR_TIMER)) {
-                return State.CLEARING_KICKER;
-            }
-            kickerClearTimer.stop();
-            kickerClearTimer.reset();
-            return spinupState;
-        }
-
-        return isReadyToShoot() ? feedState : spinupState;
-    }
 
     private State resolveIdleState() {
         if (isFeeding(currentState)) {
@@ -358,10 +302,10 @@ public class Superstructure extends SubsystemBase {
         this.desiredState = state;
     }
 
-    public void setTurretSetpoint(Angle setpoint) {
-        this.manualTurretSetpoint = setpoint;
-        this.turretMode = TurretMode.MANUAL;
-    }
+    // public void setTurretSetpoint(Angle setpoint) {
+    //     this.manualTurretSetpoint = setpoint;
+    //     this.turretMode = TurretMode.MANUAL;
+    // }
 
     public void toggleTurretMode() {
         turretMode = turretMode == TurretMode.AUTO ? TurretMode.MANUAL : TurretMode.AUTO;

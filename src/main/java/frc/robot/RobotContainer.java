@@ -1,7 +1,6 @@
 package frc.robot;
 
 import com.pathplanner.lib.auto.AutoBuilder;
-import com.pathplanner.lib.commands.PathPlannerAuto;
 
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -43,7 +42,7 @@ public class RobotContainer {
 
     private final ShooterCalc calc = new ShooterCalc(drivetrain);
     private final Vision vision = new Vision(drivetrain);
-      private final SendableChooser<Command> autoChooser;
+    private final SendableChooser<Command> autoChooser;
 
     // SUPERSTRUCTURE
 
@@ -107,8 +106,7 @@ public class RobotContainer {
         olb.onTrue(bcmd.teleop.leftTrench);
         orb.onTrue(bcmd.teleop.rigthTrench);
         ox.onTrue(bcmd.teleop.depot);
-        oy.onTrue(bcmd.teleop.toggleShooterMode);
-        olt.onTrue(bcmd.teleop.toggleTurretMode);
+        oy.onTrue(bcmd.teleop.toggleTurretMode);
 
         // DEFAULT COMMANDS
 
@@ -121,5 +119,6 @@ public class RobotContainer {
     // AUTO
 
     public Command getAutonomousCommand() {
-    return autoChooser.getSelected();    }
+        return autoChooser.getSelected();
+    }
 }

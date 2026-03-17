@@ -15,7 +15,7 @@ public class ShooterConstants {
     public static final Transform3d ROBOT_CENTER_TO_SHOOTER =
         new Transform3d(
             new Translation3d(Inches.of(-5.375), Inches.of(-1.25), Inches.of(12.385)),
-            new Rotation3d(Degrees.zero(), Degrees.zero(), Degrees.of(180)));
+            new Rotation3d(Degrees.zero(), Degrees.zero(), Degrees.of(90)));
 
     public static class FlyWheelConstants {
 
@@ -78,8 +78,8 @@ public class ShooterConstants {
             GearBox.fromReductionStages(32)
         );
         public static final Angle STARTING_POS = Degrees.of(0);
-        public static final Angle MIN_ANGLE = Degrees.of(-100);
-        public static final Angle MAX_ANGLE = Degrees.of(100);
+        public static final Angle MIN_ANGLE = Degrees.of(-10);
+        public static final Angle MAX_ANGLE = Degrees.of(200);
         public static final Angle TOLERANCE = Degrees.of(0.5);
 
         public static final double kP = 325.0;
@@ -91,7 +91,7 @@ public class ShooterConstants {
             DegreesPerSecondPerSecond.of(1800);
         public static final Current STATOR_LIMIT = Amps.of(40);
 
-        public static final Angle ENCODER_14_OFFSET = Rotations.of(0);
-        public static final Angle ENCODER_13_OFFSET = Rotations.of(0);
+        public static final Angle ENCODER_14_OFFSET = Rotations.of(-0.044);
+        public static final Angle ENCODER_13_OFFSET = Rotations.of(-0.321);
     }
 }
