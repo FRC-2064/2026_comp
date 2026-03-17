@@ -1,36 +1,43 @@
 package frc.robot.subsystems.collectionSubsystem;
 
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.signals.NeutralModeValue;
 
-import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.collectionSubsystem.CollectionConstants.IntakeRollerConstants;
-import frc.robot.utils.RobotConstants;
-import yams.motorcontrollers.SmartMotorController;
-import yams.motorcontrollers.SmartMotorControllerConfig;
-import yams.motorcontrollers.SmartMotorControllerConfig.ControlMode;
-import yams.motorcontrollers.remote.TalonFXWrapper;
 
 public class IntakeRollers extends SubsystemBase {
     private final TalonFX rollerMotor = new TalonFX(IntakeRollerConstants.ROLLER_ID);
 
-    private final SmartMotorControllerConfig motorConfig = new SmartMotorControllerConfig(this)
-    .withControlMode(ControlMode.OPEN_LOOP)
-    .withStatorCurrentLimit(IntakeRollerConstants.STATOR_LIMIT)
-    .withMotorInverted(true)
-    .withTelemetry("RollerMotor", RobotConstants.GetTelemetry());
+    private final DutyCycleOut rr = new DutyCycleOut(0).withEnableFOC(true);
 
-    private final SmartMotorController roller = new TalonFXWrapper(rollerMotor, DCMotor.getKrakenX60Foc(1), motorConfig);
+    public IntakeRollers() {
+       var c = new TalonFXConfiguration();
+
+       c.CurrentLimits.withSupplyCurrentLimit(IntakeRollerConstants.SUPPLY_LIMIT)
+       .withStatorCurrentLimit(IntakeRollerConstants.STATOR_LIMIT)
+       .withStatorCurrentLimitEnable(true);
+
+       c.MotorOutput.withNeutralMode(NeutralModeValue.Coast)
+       .withInverted(InvertedValue.CounterClockwise_Positive);
+
+       rollerMotor.getConfigurator().apply(c);
+    }
+
+
 
     public void intake() {
-        roller.setDutyCycle(IntakeRollerConstants.INTAKE);
+        rollerMotor.setControl(rr.withOutput(IntakeRollerConstants.INTAKE));
     }
 
     public void outtake() {
-        roller.setDutyCycle(IntakeRollerConstants.OUTTAKE);
+        rollerMotor.setControl(rr.withOutput(IntakeRollerConstants.OUTTAKE));
     }
 
     public void stop() {
-        roller.setDutyCycle(0);
+        rollerMotor.setControl(rr.withOutput(0));
     }
 }

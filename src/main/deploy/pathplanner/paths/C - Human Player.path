@@ -3,29 +3,29 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 2.0,
-        "y": 7.0
+        "x": 3.6,
+        "y": 4.0
       },
       "prevControl": null,
       "nextControl": {
-        "x": 3.0,
-        "y": 7.0
+        "x": 2.9081070543013707,
+        "y": 3.234986700299729
       },
       "isLocked": false,
-      "linkedName": null
+      "linkedName": "Hub"
     },
     {
       "anchor": {
-        "x": 4.349586305278173,
-        "y": 7.509029957203994
+        "x": 0.46953121359506056,
+        "y": 0.675
       },
       "prevControl": {
-        "x": 3.418245363766047,
-        "y": 7.620684736091298
+        "x": 1.2087468662437861,
+        "y": 1.4382303219657238
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": "Trench"
+      "linkedName": "Human Player"
     }
   ],
   "rotationTargets": [],
@@ -42,13 +42,13 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 0.0
+    "rotation": 180.0
   },
   "reversed": false,
-  "folder": null,
+  "folder": "Center",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": 0.0
+    "rotation": 180.0
   },
   "useDefaultConstraints": true
 }

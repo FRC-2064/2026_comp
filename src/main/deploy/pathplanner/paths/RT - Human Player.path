@@ -1,0 +1,59 @@
+{
+  "version": "2025.0",
+  "waypoints": [
+    {
+      "anchor": {
+        "x": 4.35,
+        "y": 0.675
+      },
+      "prevControl": null,
+      "nextControl": {
+        "x": 2.8353583771898423,
+        "y": 0.23689487467911657
+      },
+      "isLocked": false,
+      "linkedName": "Right_Trench_Alliance"
+    },
+    {
+      "anchor": {
+        "x": 0.46953121359506056,
+        "y": 0.675
+      },
+      "prevControl": {
+        "x": 3.047472224764471,
+        "y": 1.8263309864734185
+      },
+      "nextControl": null,
+      "isLocked": false,
+      "linkedName": "Human Player"
+    }
+  ],
+  "rotationTargets": [
+    {
+      "waypointRelativePos": 0.16570418726823233,
+      "rotationDegrees": 0.0
+    }
+  ],
+  "constraintZones": [],
+  "pointTowardsZones": [],
+  "eventMarkers": [],
+  "globalConstraints": {
+    "maxVelocity": 3.0,
+    "maxAcceleration": 3.0,
+    "maxAngularVelocity": 540.0,
+    "maxAngularAcceleration": 720.0,
+    "nominalVoltage": 12.0,
+    "unlimited": false
+  },
+  "goalEndState": {
+    "velocity": 0,
+    "rotation": 180.0
+  },
+  "reversed": false,
+  "folder": "Right Trench",
+  "idealStartingState": {
+    "velocity": 0,
+    "rotation": 0.0
+  },
+  "useDefaultConstraints": true
+}

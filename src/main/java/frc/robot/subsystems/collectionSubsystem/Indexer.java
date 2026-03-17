@@ -1,57 +1,70 @@
 package frc.robot.subsystems.collectionSubsystem;
 
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.revrobotics.PersistMode;
+import com.revrobotics.ResetMode;
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
+import com.revrobotics.spark.config.SparkFlexConfig;
 
-import edu.wpi.first.math.Pair;
-import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.collectionSubsystem.CollectionConstants.IndexerConstants;
 import frc.robot.subsystems.collectionSubsystem.CollectionConstants.KickerConstants;
 import frc.robot.utils.RobotConstants;
-import yams.motorcontrollers.SmartMotorController;
-import yams.motorcontrollers.SmartMotorControllerConfig;
-import yams.motorcontrollers.SmartMotorControllerConfig.ControlMode;
-import yams.motorcontrollers.SmartMotorControllerConfig.MotorMode;
-import yams.motorcontrollers.local.SparkWrapper;
-import yams.motorcontrollers.remote.TalonFXWrapper;
 
 public class Indexer extends SubsystemBase {
-    private final TalonFX spindexerMotor = new TalonFX(IndexerConstants.MOTOR_ID);
+    private final TalonFX spindexerMotor = new TalonFX(IndexerConstants.MOTOR_ID, RobotConstants.CANIVORE);
     private final SparkFlex leaderMotor = new SparkFlex(KickerConstants.KICKER_LEADER_ID, MotorType.kBrushless);
     private final SparkFlex followerMotor = new SparkFlex(KickerConstants.KICKER_FOLLOWER_ID, MotorType.kBrushless);
 
-    private final SmartMotorControllerConfig spindexerConfig = new SmartMotorControllerConfig(this)
-    .withControlMode(ControlMode.OPEN_LOOP)
-    .withStatorCurrentLimit(IndexerConstants.STATOR_LIMIT)
-    .withIdleMode(MotorMode.COAST)
-    .withMotorInverted(true)
-    .withTelemetry("SpindexerMotor", RobotConstants.GetTelemetry());
+    private final DutyCycleOut sr = new DutyCycleOut(0).withEnableFOC(true);
 
-    private final SmartMotorControllerConfig kickerConfig = new SmartMotorControllerConfig(this)
-    .withControlMode(ControlMode.OPEN_LOOP)
-    .withSupplyCurrentLimit(KickerConstants.CURRENT_LIMIT)
-    .withMotorInverted(true)
-    .withIdleMode(MotorMode.COAST)
-    .withFollowers(Pair.of(followerMotor, false))
-    .withTelemetry("KickerMotor", RobotConstants.GetTelemetry());
+    public Indexer() {
+        var sc = new TalonFXConfiguration();
+        sc.CurrentLimits.withStatorCurrentLimit(IndexerConstants.STATOR_LIMIT)
+        .withStatorCurrentLimitEnable(true);
+        sc.MotorOutput.withNeutralMode(NeutralModeValue.Coast)
+        .withInverted(InvertedValue.Clockwise_Positive);
 
-    private final SmartMotorController spindexer = new TalonFXWrapper(spindexerMotor, DCMotor.getKrakenX44Foc(1), spindexerConfig);
-    private final SmartMotorController kicker = new SparkWrapper(leaderMotor, DCMotor.getNeoVortex(2), kickerConfig);
+        spindexerMotor.getConfigurator().apply(sc);
+
+        var lc = new SparkFlexConfig()
+        .inverted(true)
+        .idleMode(IdleMode.kCoast)
+        .smartCurrentLimit(KickerConstants.CURRENT_LIMIT);
+
+        var fc = new SparkFlexConfig()
+        .follow(leaderMotor,false)
+        .idleMode(IdleMode.kCoast)
+        .smartCurrentLimit(KickerConstants.CURRENT_LIMIT);
+
+        leaderMotor.configure(lc, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+        followerMotor.configure(fc, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+
+    }
 
     public void feed() {
-        kicker.setDutyCycle(KickerConstants.FEED);
-        spindexer.setDutyCycle(IndexerConstants.FEED);
+        leaderMotor.set(KickerConstants.FEED);
+        spindexerMotor.setControl(sr.withOutput(IndexerConstants.FEED));
+    }
+
+    public void clear() {
+        leaderMotor.set(KickerConstants.OUTTAKE);
+        spindexerMotor.setControl(sr.withOutput(0));
     }
 
     public void outtake() {
-        kicker.setDutyCycle(KickerConstants.OUTTAKE);
-        spindexer.setDutyCycle(IndexerConstants.OUTTAKE);
+        leaderMotor.set(KickerConstants.OUTTAKE);
+        spindexerMotor.setControl(sr.withOutput(IndexerConstants.OUTTAKE));
     }
 
     public void stop() {
-        kicker.setDutyCycle(0);
-        spindexer.setDutyCycle(0);
+        leaderMotor.set(0);
+        spindexerMotor.setControl(sr.withOutput(0));
     }
 }

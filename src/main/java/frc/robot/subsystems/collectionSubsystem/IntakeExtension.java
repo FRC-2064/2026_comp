@@ -1,62 +1,71 @@
 package frc.robot.subsystems.collectionSubsystem;
 
-import com.ctre.phoenix6.hardware.TalonFX;
+import static edu.wpi.first.units.Units.Rotations;
 
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.MotionMagicVoltage;
+import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.NeutralModeValue;
+
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.collectionSubsystem.CollectionConstants.IntakeConstants;
 import frc.robot.utils.RobotConstants;
-import yams.mechanisms.config.ElevatorConfig;
-import yams.mechanisms.positional.Elevator;
-import yams.motorcontrollers.SmartMotorController;
-import yams.motorcontrollers.SmartMotorControllerConfig;
-import yams.motorcontrollers.SmartMotorControllerConfig.ControlMode;
-import yams.motorcontrollers.SmartMotorControllerConfig.MotorMode;
-import yams.motorcontrollers.remote.TalonFXWrapper;
 
 public class IntakeExtension extends SubsystemBase {
-    private final TalonFX extendMotor = new TalonFX(IntakeConstants.EXTEND_ID);
 
-    private final SmartMotorControllerConfig motorConfig = new SmartMotorControllerConfig(this)
-            .withControlMode(ControlMode.CLOSED_LOOP)
-            .withClosedLoopController(
-                    IntakeConstants.kP,
-                    IntakeConstants.kI,
-                    IntakeConstants.kD,
-                    IntakeConstants.MAX_VEL,
-                    IntakeConstants.MAX_ACCEL)
-            .withGearing(IntakeConstants.RACK_GEARING)
-            .withIdleMode(MotorMode.BRAKE)
-            .withStatorCurrentLimit(IntakeConstants.STATOR_LIMIT)
-            .withTelemetry("ExtensionMotor", RobotConstants.GetTelemetry());
+    private final TalonFX extendMotor = new TalonFX(
+        IntakeConstants.EXTEND_ID,
+        RobotConstants.CANIVORE
+    );
 
-    private final SmartMotorController motor = new TalonFXWrapper(
-            extendMotor, IntakeConstants.MOTOR_TYPE, motorConfig);
+    private final MotionMagicVoltage mmr = new MotionMagicVoltage(
+        0
+    ).withEnableFOC(true);
 
-    private final ElevatorConfig extenderConfig = new ElevatorConfig(motor)
-            .withStartingHeight(IntakeConstants.STOW_HEIGHT)
-            .withHardLimits(IntakeConstants.STOW_HEIGHT, IntakeConstants.INTAKE_HEIGHT)
-            .withMass(IntakeConstants.MOI_MASS)
-            .withTelemetry("Extension", RobotConstants.GetTelemetry());
+    public IntakeExtension() {
+        var c = new TalonFXConfiguration();
 
-    private final Elevator rack = new Elevator(extenderConfig);
+        c.Slot0.withKP(IntakeConstants.P)
+            .withKI(IntakeConstants.I)
+            .withKD(IntakeConstants.D);
 
-    public IntakeExtension() {}
+        c.MotionMagic.withMotionMagicCruiseVelocity(IntakeConstants.MM_CRUISE_VEL)
+        .withMotionMagicAcceleration(IntakeConstants.MM_ACCEL);
+
+        c.Feedback.withSensorToMechanismRatio(IntakeConstants.RACK_GEARING);
+
+        c.CurrentLimits.withSupplyCurrentLimit(IntakeConstants.SUPPLY_LIMIT)
+        .withStatorCurrentLimit(IntakeConstants.STATOR_LIMIT)
+        .withStatorCurrentLimitEnable(true);
+
+        c.MotorOutput.withNeutralMode(NeutralModeValue.Coast);
+
+        extendMotor.getConfigurator().apply(c);
+        extendMotor.setPosition(IntakeConstants.STOW);
+    }
 
     public void extend() {
-        rack.setHeight(IntakeConstants.INTAKE_HEIGHT);
+        extendMotor.setControl(mmr.withPosition(IntakeConstants.INTAKE));
+        SmartDashboard.putNumber("extension/target", IntakeConstants.INTAKE.in(Rotations));
     }
 
     public void stow() {
-        rack.setHeight(IntakeConstants.STOW_HEIGHT);
+        extendMotor.setControl(mmr.withPosition(IntakeConstants.STOW));
+        SmartDashboard.putNumber("extension/target", IntakeConstants.STOW.in(Rotations));
+    }
+
+    public void agitate() {
+        extendMotor.setControl(mmr.withPosition(IntakeConstants.AGITATE));
+        SmartDashboard.putNumber("extension/target", IntakeConstants.AGITATE.in(Rotations));
+    }
+
+    public void zero() {
+        extendMotor.setPosition(0);
     }
 
     @Override
     public void periodic() {
-        rack.updateTelemetry();
-    }
-
-    @Override
-    public void simulationPeriodic() {
-        rack.simIterate();
+        SmartDashboard.putNumber("extension/current", extendMotor.getPosition().getValue().in(Rotations));
     }
 }

@@ -4,29 +4,24 @@ import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.RPM;
-import static edu.wpi.first.units.Units.Radians;
-
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.interpolation.InterpolatingTreeMap;
 import edu.wpi.first.math.interpolation.InverseInterpolator;
 import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.networktables.StructArrayPublisher;
 import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 import frc.robot.subsystems.shooterSubsystem.ShooterConstants;
+import frc.robot.subsystems.shooterSubsystem.ShooterConstants.TurretConstants;
 import frc.robot.utils.FieldConstants.Hub;
-import frc.robot.utils.FieldConstants.LeftBump;
 import frc.robot.utils.FieldConstants.LinesVertical;
-import frc.robot.utils.FieldConstants.RightBump;
+import frc.robot.utils.FieldConstants.Tower;
 import frc.robot.utils.Liana.LianaHelpers;
 
 public class ShooterCalc {
@@ -36,15 +31,25 @@ public class ShooterCalc {
             .getStructTopic("ShooterCalc/Target", Translation2d.struct)
             .publish();
 
-    private StructArrayPublisher<Pose3d> actualPath =
+    private StructPublisher<Translation2d> targetShot =
         NetworkTableInstance.getDefault()
-            .getStructArrayTopic("ShooterCalc/ActualPath", Pose3d.struct)
+            .getStructTopic("ShooterCalc/TargetShot", Translation2d.struct)
             .publish();
 
-    private StructArrayPublisher<Pose3d> targetedPath =
+    private StructPublisher<Translation2d> turretPosPublisher =
         NetworkTableInstance.getDefault()
-            .getStructArrayTopic("ShooterCalc/TargetedPath", Pose3d.struct)
+            .getStructTopic("ShooterCalc/TurretPos", Translation2d.struct)
             .publish();
+
+    private StructPublisher<Translation2d> targetPublisher2 =
+        NetworkTableInstance.getDefault()
+            .getStructTopic("ShooterCalc/LookaheadPos", Translation2d.struct)
+            .publish();
+
+    private StructPublisher<Transform3d> transformPub = NetworkTableInstance.getDefault()
+        .getStructTopic("shootercalc/turretLoc", Transform3d.struct)
+        .publish();
+
 
     public record FullShooterParams(double rpm, double hood, double tof) {
         public static FullShooterParams interpolate(
@@ -77,15 +82,9 @@ public class ShooterCalc {
         new InterpolatingDoubleTreeMap();
 
     static {
-        add(1.5, 2800, 35, 0.38);
-        add(2.0, 3100, 38, 0.45);
-        add(2.5, 3400, 42, 0.52);
-        add(3.0, 3650, 46, 0.60);
-        add(3.5, 3900, 50, 0.68);
-        add(4.0, 4100, 54, 0.76);
-        add(4.5, 4350, 58, 0.85);
-        add(5.0, 4550, 62, 0.94);
-        add(6.0, 5000, 65, 1.10);
+        add(3.39, 5000, 8, 0);
+        add(4.37, 5250, 10, 0);
+        add(3.15, 4500, 8, 0);
     }
 
     private static void add(double dist, double rpm, double hood, double tof) {
@@ -98,30 +97,47 @@ public class ShooterCalc {
 
     public ShooterCalc(CommandSwerveDrivetrain drive) {
         this.drive = drive;
+
+        transformPub.set(ShooterConstants.ROBOT_CENTER_TO_SHOOTER);
     }
 
     public ShooterSolution getSelectedSolution() {
         var state = drive.getState();
         Pose2d pose = state.Pose;
 
-        Translation2d turretOffset = ShooterConstants.ROBOT_CENTER_TO_SHOOTER.toTranslation2d();
-        double omega = state.Speeds.omegaRadiansPerSecond;
+        var turretZeroInFieldFrame = pose.getRotation()
+            .plus(new Rotation2d(
+                ShooterConstants.ROBOT_CENTER_TO_SHOOTER.getRotation().getZ()
+            ));
 
-        double tanVelX = -omega * turretOffset.getY();
-        double tanVelY = -omega * turretOffset.getX();
+        var turretMountOffset = ShooterConstants.ROBOT_CENTER_TO_SHOOTER
+            .getTranslation()
+            .toTranslation2d()
+            .rotateBy(pose.getRotation());
+
+        double omega = state.Speeds.omegaRadiansPerSecond;
+        double tanVelX = -omega * ShooterConstants.ROBOT_CENTER_TO_SHOOTER.getTranslation().getY();
+        double tanVelY =  omega * ShooterConstants.ROBOT_CENTER_TO_SHOOTER.getTranslation().getX();
 
         Translation2d robotRelativeTurretVel = new Translation2d(
             state.Speeds.vxMetersPerSecond + tanVelX,
             state.Speeds.vyMetersPerSecond + tanVelY
         );
 
-        Translation2d robotVel = robotRelativeTurretVel.rotateBy(pose.getRotation());
+        double speed = Math.hypot(
+            state.Speeds.vxMetersPerSecond,
+            state.Speeds.vyMetersPerSecond
+        );
+        Translation2d robotVel = speed > 0.05
+            ? robotRelativeTurretVel.rotateBy(pose.getRotation())
+            : Translation2d.kZero;
 
         Translation2d latencyOffset = robotVel.times(LATENCY);
-        Translation2d turretPos = pose.getTranslation().plus(latencyOffset);
+        Translation2d turretPos = pose.getTranslation()
+            .plus(turretMountOffset)
+            .plus(latencyOffset);
 
         Translation2d target = getTarget(pose);
-
         Translation2d lookaheadPos = turretPos;
         double lookaheadDist = target.getDistance(turretPos);
 
@@ -133,37 +149,21 @@ public class ShooterCalc {
         }
 
         Translation2d toGoal = target.minus(lookaheadPos);
-        Rotation2d turretAngle = toGoal.getAngle().minus(pose.getRotation());
+        Rotation2d turretAngle = toGoal.getAngle().minus(turretZeroInFieldFrame);
 
         FullShooterParams params = SHOOTER_MAP.get(lookaheadDist);
 
-        double finalHoodAngle =
-            params.hood() + LianaHelpers.getHoodAngleAdjustment();
-        double vLaunchH = toGoal.getNorm() / params.tof();
-        double vLaunchZ =
-            vLaunchH * Math.tan(Degrees.of(finalHoodAngle - 15).in(Radians));
-
-        Translation3d startPose3d = new Translation3d(
-            pose.getX(),
-            pose.getY(),
-            ShooterConstants.ROBOT_CENTER_TO_SHOOTER.getZ()
-        );
-
-        Translation2d shotVelH = toGoal.div(toGoal.getNorm()).times(vLaunchH);
-        Translation2d actualVelH = shotVelH.plus(robotVel);
-
-        actualPath.set(
-            buildPath(startPose3d, actualVelH, vLaunchZ, params.tof())
-        );
-        targetedPath.set(
-            buildPath(startPose3d, shotVelH, vLaunchZ, params.tof())
-        );
-        targetPublisher.set(toGoal);
+        targetShot.set(toGoal);
+        turretPosPublisher.set(turretPos);
+        targetPublisher2.set(lookaheadPos);
 
         return new ShooterSolution(
             Degrees.of(
-                turretAngle.getDegrees() +
-                    LianaHelpers.getTurretAngleAdjustment()
+                MathUtil.clamp(
+                    turretAngle.getDegrees() + LianaHelpers.getTurretAngleAdjustment(),
+                    TurretConstants.MIN_ANGLE.in(Degrees),
+                    TurretConstants.MAX_ANGLE.in(Degrees)
+                )
             ),
             Degrees.of(params.hood() + LianaHelpers.getHoodAngleAdjustment()),
             RPM.of(params.rpm() + LianaHelpers.getFlywheelAdjustment())
@@ -184,37 +184,14 @@ public class ShooterCalc {
         if (minX < LinesVertical.allianceZone) {
             targetLogical = Hub.innerCenterPoint.toTranslation2d();
         } else {
-            double distToLeft = logicalPose
-                .getTranslation()
-                .getDistance(LeftBump.leftBumpTarget);
-            double distToRight = logicalPose
-                .getTranslation()
-                .getDistance(RightBump.rightBumpTarget);
-            targetLogical = (distToLeft < distToRight)
-                ? LeftBump.leftBumpTarget
-                : RightBump.rightBumpTarget;
-        }
 
-        return AllianceFlip.apply(targetLogical);
+            double tarX = Tower.frontFaceX;
+            double tarY = logicalPose.getY();
+            targetLogical = new Translation2d(tarX, tarY);
+        }
+        var ret = AllianceFlip.apply(targetLogical);
+        targetPublisher.set(ret);
+        return ret;
     }
 
-    private Pose3d[] buildPath(
-        Translation3d start,
-        Translation2d velH,
-        double velZ,
-        double tof
-    ) {
-        int steps = 20;
-        Pose3d[] path = new Pose3d[steps];
-        double dt = tof / (steps - 1);
-
-        for (int i = 0; i < steps; i++) {
-            double t = i * dt;
-            double x = start.getX() + velH.getX() * t;
-            double y = start.getY() + velH.getY() * t;
-            double z = start.getZ() + (velZ * t) - (0.5 * 9.81 * t * t);
-            path[i] = new Pose3d(x, y, z, new Rotation3d());
-        }
-        return path;
-    }
 }

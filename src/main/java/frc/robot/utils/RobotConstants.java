@@ -2,17 +2,23 @@ package frc.robot.utils;
 
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.MetersPerSecond;
-import static edu.wpi.first.units.Units.MetersPerSecondPerSecond;
+import static edu.wpi.first.units.Units.RPM;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
+import static edu.wpi.first.units.Units.Seconds;
+
+import com.ctre.phoenix6.CANBus;
 
 import edu.wpi.first.units.measure.Angle;
-import edu.wpi.first.units.measure.AngularVelocity;
-import edu.wpi.first.units.measure.LinearAcceleration;
-import edu.wpi.first.units.measure.LinearVelocity;
+import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.RobotBase;
+import frc.robot.generated.TunerConstants;
+import frc.robot.utils.ShooterCalc.ShooterSolution;
 import yams.motorcontrollers.SmartMotorControllerConfig.TelemetryVerbosity;
 
 public class RobotConstants {
+
+    public static final CANBus CANIVORE = new CANBus("Comp");
 
     public static TelemetryVerbosity GetTelemetry() {
         if (RobotBase.isSimulation()) {
@@ -21,29 +27,16 @@ public class RobotConstants {
         return TelemetryVerbosity.LOW;
     }
 
-    public static class DriveConstants {
+    public static final double MAX_SPEED = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
+    public static final double MAX_ROT = RotationsPerSecond.of(0.75).in(RadiansPerSecond);
 
-        public static final LinearVelocity MAX_DRIVE_SPEED = MetersPerSecond.of(
-            5.23
-        );
-        public static final AngularVelocity MAX_ROT_SPEED = RadiansPerSecond.of(
-            Math.PI * 1.5
-        );
-
-        public static final LinearVelocity FAST_DRIVE_SPEED =
-            MAX_DRIVE_SPEED.times(1.5);
-        public static final AngularVelocity FAST_ROT_SPEED =
-            MAX_ROT_SPEED.times(1.5);
-
-        public static final LinearAcceleration MAX_ACCEL =
-            MetersPerSecondPerSecond.of(3.0);
-
-        public static final double DEADBAND = 0.1;
-    }
 
     public static class SuperstructureConstants {
 
-        public static final double READY_TO_SHEET_DEBOUNCE_SECONDS = 0.25;
+        public static final double READY_TO_SHOOT_DEBOUNCE_SECONDS = 0.5;
+        public static final double CONTINUE_SHOOT_DEBOUNCE_SECONDS = 2.0;
+
+        public static final Time KICKER_CLEAR_TIMER = Seconds.of(0.25);
 
         public static final double STOW_SPEED = 1.0;
         public static final double OUTTAKE_SPEED = 1.0;
@@ -53,5 +46,22 @@ public class RobotConstants {
 
         public static final double MANUAL_TURRET_DEADBAND = 0.1;
         public static final Angle MANUAL_TURRET_RATE = Degrees.of(3);
+    }
+
+    public static class ShooterSolutions {
+        public static final ShooterSolution DEPOT = new ShooterSolution(
+            Degrees.of(64), Degrees.of(10), RPM.of(5250));
+
+        public static final ShooterSolution TRENCH_LEFT = new ShooterSolution(
+            Degrees.of(180), Degrees.of(8), RPM.of(5500));
+
+        public static final ShooterSolution TRENCH_RIGHT = new ShooterSolution(
+            Degrees.of(0), Degrees.of(8), RPM.of(5500));
+
+        public static final ShooterSolution TOWER = new ShooterSolution(
+        Degrees.of(90), Degrees.of(8), RPM.of(4550));
+
+        public static final ShooterSolution HUMAN_PLAYER = new ShooterSolution(
+            Degrees.of(135), Degrees.of(10), RPM.of(5250));
     }
 }

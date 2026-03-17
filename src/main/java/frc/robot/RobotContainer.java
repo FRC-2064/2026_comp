@@ -1,50 +1,50 @@
-// Copyright (c) FIRST and other WPILib contributors.
-// Open Source Software; you can modify and/or share it under the terms of
-// the WPILib BSD license file in the root directory of this project.
-
 package frc.robot;
 
-import static edu.wpi.first.units.Units.Degrees;
-import static edu.wpi.first.units.Units.MetersPerSecond;
+import com.pathplanner.lib.auto.AutoBuilder;
 
-import com.pathplanner.lib.auto.NamedCommands;
-import com.ctre.phoenix6.swerve.SwerveRequest;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
-import frc.robot.commands.TeleopDrive;
+import frc.robot.commands.BasicCommands;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.Superstructure;
-import frc.robot.subsystems.Superstructure.DesiredState;
 import frc.robot.subsystems.collectionSubsystem.Indexer;
 import frc.robot.subsystems.collectionSubsystem.IntakeExtension;
 import frc.robot.subsystems.collectionSubsystem.IntakeRollers;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 import frc.robot.subsystems.drive.vision.Vision;
-import frc.robot.subsystems.shooterSubsystem.FlywheelSubsystem;
+import frc.robot.subsystems.shooterSubsystem.Flywheel;
 import frc.robot.subsystems.shooterSubsystem.Hood;
 import frc.robot.subsystems.shooterSubsystem.Turret;
+import frc.robot.utils.RobotConstants;
 import frc.robot.utils.ShooterCalc;
 
 public class RobotContainer {
 
+    // CONTROLLERS
+
     final CommandXboxController driverXbox = new CommandXboxController(0);
     final CommandXboxController operatorXbox = new CommandXboxController(1);
 
+    // SUBSYSTEMS
+
     private final Turret turret = new Turret();
     private final Hood hood = new Hood();
-    private final FlywheelSubsystem flywheel = new FlywheelSubsystem();
+    private final Flywheel flywheel = new Flywheel();
     private final IntakeExtension extension = new IntakeExtension();
     private final IntakeRollers rollers = new IntakeRollers();
     private final Indexer indexer = new Indexer();
-    private final CommandSwerveDrivetrain drivetrain =
-        TunerConstants.createDrivetrain();
+    private final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
+
+    // UTILITIES
 
     private final ShooterCalc calc = new ShooterCalc(drivetrain);
     private final Vision vision = new Vision(drivetrain);
+    private final SendableChooser<Command> autoChooser;
+
+    // SUPERSTRUCTURE
 
     private final Superstructure superstructure = new Superstructure(
         extension,
@@ -58,108 +58,67 @@ public class RobotContainer {
         () -> operatorXbox.getLeftX()
     );
 
-    private final double MaxSpeed =
-        1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
-
-
-    private final SwerveRequest.SwerveDriveBrake brake =
-        new SwerveRequest.SwerveDriveBrake();
-
-    private final Telemetry logger = new Telemetry(MaxSpeed);
-    private final TeleopDrive drive = new TeleopDrive(drivetrain, superstructure, driverXbox);
+    private final BasicCommands bcmd = new BasicCommands(superstructure, drivetrain, driverXbox);
+    private final Telemetry logger = new Telemetry(RobotConstants.MAX_SPEED);
 
     public RobotContainer() {
-        NamedCommands.registerCommand("intake", new RunCommand(() -> superstructure.setDesiredState(DesiredState.INTAKE), superstructure));
-        NamedCommands.registerCommand("shoot", new RunCommand(() -> superstructure.setDesiredState(DesiredState.SHOOT), superstructure));
-        NamedCommands.registerCommand("snowblow", new RunCommand(() -> superstructure.setDesiredState(DesiredState.SNOWBLOW), superstructure));
-        NamedCommands.registerCommand("stow", new RunCommand(() -> superstructure.setDesiredState(DesiredState.IDLE), superstructure));
-        NamedCommands.registerCommand("retract intake", new InstantCommand(superstructure::stowIntake));
-
+        bcmd.auto.registerAll();
+        autoChooser = AutoBuilder.buildAutoChooser();
+        SmartDashboard.putData("Auto Chooser", autoChooser);
         configureBindings();
     }
 
     private void configureBindings() {
-        final var leftTrigger = driverXbox.leftTrigger();   // intake
-        final var rightTrigger = driverXbox.rightTrigger(); // shoot
-        final var leftBumper = driverXbox.leftBumper();     // outtake
 
-        final var back = driverXbox.back();   // toggle drive assist
-        final var start = driverXbox.start(); // home hood TESTING ONLY
-        final var x = driverXbox.x();         // lock
-        final var a = driverXbox.a();         // stow intake
+        // DRIVER BUTTONS
 
-        final var oa = operatorXbox.a(); // toggle manual turret manual override
-        final var ob = operatorXbox.b(); // manual turret setpoint: 270
-        final var ox = operatorXbox.x(); // manual turret setpoint: 90
-        final var oy = operatorXbox.y(); // manual turret setpoint: 0
+        final var lt = driverXbox.leftTrigger().debounce(0.25);    // intake
+        final var rt = driverXbox.rightTrigger().debounce(0.25);   // shoot
+        final var lb = driverXbox.leftBumper();                    // outtake
+        final var a  = driverXbox.a();                             // stow intake
+        final var x  = driverXbox.x();                             // lock drive
+
+        // OPERATOR BUTTONS
+
+        final var oa = operatorXbox.a();                           // human player
+        final var ob = operatorXbox.b();                           // right trench
+        final var ox = operatorXbox.x();                           // left trench
+        final var oy = operatorXbox.y();                           // tower
+        final var olb = operatorXbox.leftBumper();                 // depot
+        final var orb = operatorXbox.rightBumper();                // toggle shooter mode
+        final var olt = operatorXbox.leftTrigger().debounce(0.25); // toggle turret mode
 
         // TRIGGERS
 
-        leftTrigger
-            .and(rightTrigger)
-            .whileTrue(
-                new RunCommand(() ->
-                    superstructure.setDesiredState(DesiredState.SNOWBLOW)
-                )
-            );
-
-        leftTrigger
-            .and(rightTrigger.negate())
-            .whileTrue(
-                new RunCommand(() ->
-                    superstructure.setDesiredState(DesiredState.INTAKE)
-                )
-            );
-
-        rightTrigger
-            .and(leftTrigger.negate())
-            .whileTrue(
-                new RunCommand(() ->
-                    superstructure.setDesiredState(DesiredState.SHOOT)
-                )
-            );
-
-        leftBumper.whileTrue(
-            new RunCommand(() ->
-                superstructure.setDesiredState(DesiredState.OUTTAKE)
-            )
-        );
+        lt.and(rt).whileTrue(bcmd.teleop.snowblow);
+        lt.and(rt.negate()).whileTrue(bcmd.teleop.intake);
+        rt.and(lt.negate()).whileTrue(bcmd.teleop.shoot);
 
         // BUTTONS
-
-        back.onTrue(drive.toggleZoneAssist());
-        start.onTrue(hood.home());
-        x.whileTrue(drivetrain.applyRequest(() -> brake));
-        a.onTrue(new InstantCommand(superstructure::stowIntake));
-
+        lb.whileTrue(bcmd.teleop.outtake);
+        a.onTrue(bcmd.teleop.stowIntake);
+        x.whileTrue(bcmd.teleop.lockDrive);
 
         // OPERATOR OVERRIDES
-        oa.onTrue(new InstantCommand(superstructure::toggleTurretMode));
-        oy.onTrue(new InstantCommand(() -> superstructure.setTurretSetpoint(Degrees.of(0))));
-        ox.onTrue(new InstantCommand(() -> superstructure.setTurretSetpoint(Degrees.of(90))));
-        ob.onTrue(new InstantCommand(() -> superstructure.setTurretSetpoint(Degrees.of(270))));
 
+        ob.onTrue(bcmd.teleop.humanPlayer);
+        oa.onTrue(bcmd.teleop.tower);
+        olb.onTrue(bcmd.teleop.leftTrench);
+        orb.onTrue(bcmd.teleop.rigthTrench);
+        ox.onTrue(bcmd.teleop.depot);
+        oy.onTrue(bcmd.teleop.toggleTurretMode);
 
         // DEFAULT COMMANDS
 
-        superstructure.setDefaultCommand(
-            new RunCommand(
-                () -> superstructure.setDesiredState(DesiredState.IDLE),
-                superstructure
-            )
-        );
-
-        drivetrain.setDefaultCommand(drive);
-
-        final var idle = new SwerveRequest.Idle();
-        RobotModeTriggers.disabled().whileTrue(
-            drivetrain.applyRequest(() -> idle).ignoringDisable(true)
-        );
-
+        superstructure.setDefaultCommand(bcmd.teleop.idle);
+        drivetrain.setDefaultCommand(bcmd.teleop.fieldCentricDrive);
+        RobotModeTriggers.disabled().whileTrue(bcmd.teleop.disabledIdle);
         drivetrain.registerTelemetry(logger::telemeterize);
     }
 
+    // AUTO
+
     public Command getAutonomousCommand() {
-        return Commands.none();
+        return autoChooser.getSelected();
     }
 }

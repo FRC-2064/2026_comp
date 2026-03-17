@@ -62,14 +62,14 @@ public class Vision extends SubsystemBase {
                 .build()
         );
 
-        cameras.add(
-            new LLCamera.LLCameraConfig(VisionConstants.LIMELIGHT_NAME)
-                .withTransform(VisionConstants.ROBOT_TO_LIMELIGHT_CAM)
-                .setEnabled(VisionConstants.ENABLE_LIMELIGHT_CAMERA)
-                .withMegaTag2(VisionConstants.USE_MGT2)
-                .withMeasurementConsumer(consumer)
-                .build()
-        );
+        // cameras.add(
+        //     new LLCamera.LLCameraConfig(VisionConstants.LIMELIGHT_NAME)
+        //         .withTransform(VisionConstants.ROBOT_TO_LIMELIGHT_CAM)
+        //         .setEnabled(VisionConstants.ENABLE_LIMELIGHT_CAMERA)
+        //         .withMegaTag2(VisionConstants.USE_MGT2)
+        //         .withMeasurementConsumer(consumer)
+        //         .build()
+        // );
     }
 
     private void setupSim() {
