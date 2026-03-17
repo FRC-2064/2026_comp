@@ -7,6 +7,7 @@ import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
+import frc.robot.subsystems.drive.vision.VisionConstants.TrackingConstants;
 import frc.robot.utils.FieldConstants;
 import java.util.List;
 import java.util.Optional;
@@ -28,17 +29,17 @@ public class PVCamera implements VisionCamera {
 
     private final StructPublisher<Transform3d> transformPub;
 
-    private PVCamera(PVCameraConfig config) {
+    public PVCamera(PVCameraConfig config) {
         this.name = config.name;
         this.camera = new PhotonCamera(config.name);
         this.enabled = config.enabled;
         this.consumer = config.measurementConsumer;
-        this.curStdDevs = VisionConstants.SINGLE_TAG_STD_DEVS;
+        this.curStdDevs = TrackingConstants.SINGLE_TAG_STD_DEVS;
 
         this.cameraPosition = config.robotToCamera;
 
         this.poseEstimator = new PhotonPoseEstimator(
-            FieldConstants.defaultAprilTagType.getLayout(),
+            FieldConstants.DEFAULT_APRIL_TAG_TYPE.getLayout(),
             config.robotToCamera
         );
 
@@ -61,7 +62,7 @@ public class PVCamera implements VisionCamera {
     private void processResult(PhotonPipelineResult result) {
         var visionEst = poseEstimator.estimateCoprocMultiTagPose(result);
 
-        if (visionEst.isEmpty() && VisionConstants.USE_MULTI_TAG_FALLBACK) {
+        if (visionEst.isEmpty() && TrackingConstants.USE_MULTI_TAG_FALLBACK) {
             visionEst = poseEstimator.estimateLowestAmbiguityPose(result);
         }
 
@@ -71,7 +72,7 @@ public class PVCamera implements VisionCamera {
             if (
                 result.hasTargets() &&
                 result.getBestTarget().getPoseAmbiguity() >
-                VisionConstants.MAX_POSE_AMBIGUITY
+                TrackingConstants.MAX_POSE_AMBIGUITY
             ) {
                 return;
             }
@@ -95,7 +96,7 @@ public class PVCamera implements VisionCamera {
         List<PhotonTrackedTarget> targets
     ) {
         if (estimatedPose.isEmpty()) {
-            curStdDevs = VisionConstants.SINGLE_TAG_STD_DEVS;
+            curStdDevs = TrackingConstants.SINGLE_TAG_STD_DEVS;
             return;
         }
 
@@ -111,16 +112,16 @@ public class PVCamera implements VisionCamera {
         }
 
         if (numTags == 0) {
-            curStdDevs = VisionConstants.SINGLE_TAG_STD_DEVS;
+            curStdDevs = TrackingConstants.SINGLE_TAG_STD_DEVS;
             return;
         }
 
         var estStdDevs = numTags > 1
-            ? VisionConstants.MULTI_TAG_STD_DEVS
-            : VisionConstants.SINGLE_TAG_STD_DEVS;
+            ? TrackingConstants.MULTI_TAG_STD_DEVS
+            : TrackingConstants.SINGLE_TAG_STD_DEVS;
 
 
-            if (numTags == 1 && avgDist > VisionConstants.MAX_DETECTION_DISTANCE) {
+            if (numTags == 1 && avgDist > TrackingConstants.MAX_DETECTION_DISTANCE) {
                 estStdDevs = VecBuilder.fill(Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE);
             } else {
                 estStdDevs = estStdDevs.times(1 + ((avgDist * avgDist) / 30));
@@ -175,12 +176,13 @@ public class PVCamera implements VisionCamera {
         return curStdDevs;
     }
 
-    public PhotonCamera getCamera() {
-        return camera;
+    @Override
+    public Transform3d getRobotToCamera() {
+        return cameraPosition;
     }
 
-    public Transform3d getPosition() {
-        return cameraPosition;
+    public PhotonCamera getCamera() {
+        return camera;
     }
 
     public static class PVCameraConfig {

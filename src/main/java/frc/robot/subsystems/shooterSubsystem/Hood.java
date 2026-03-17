@@ -2,64 +2,59 @@ package frc.robot.subsystems.shooterSubsystem;
 
 import static edu.wpi.first.units.Units.Degrees;
 
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.MotionMagicTorqueCurrentFOC;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.networktables.DoublePublisher;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.units.measure.Angle;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.shooterSubsystem.ShooterConstants.HoodConstants;
-import frc.robot.utils.RobotConstants;
-import yams.mechanisms.config.PivotConfig;
-import yams.mechanisms.positional.Pivot;
-import yams.motorcontrollers.SmartMotorController;
-import yams.motorcontrollers.SmartMotorControllerConfig;
-import yams.motorcontrollers.SmartMotorControllerConfig.ControlMode;
-import yams.motorcontrollers.SmartMotorControllerConfig.MotorMode;
-import yams.motorcontrollers.remote.TalonFXWrapper;
 
 public class Hood extends SubsystemBase {
-
     private final TalonFX hoodMotor = new TalonFX(HoodConstants.MOTOR_ID);
 
-    private final SmartMotorControllerConfig motorConfig =
-        new SmartMotorControllerConfig(this)
-            .withControlMode(ControlMode.CLOSED_LOOP)
-            .withClosedLoopController(
-                HoodConstants.kP,
-                HoodConstants.kI,
-                HoodConstants.kD,
-                HoodConstants.MAX_VELOCITY,
-                HoodConstants.MAX_ACCELERATION
-            )
-            .withGearing(HoodConstants.GEARING)
-            .withIdleMode(MotorMode.BRAKE)
-            .withStatorCurrentLimit(HoodConstants.STATOR_LIMIT)
-            .withTelemetry("HoodMotor", RobotConstants.GetTelemetry());
-
-    private final SmartMotorController motor = new TalonFXWrapper(
-        hoodMotor,
-        HoodConstants.MOTOR_TYPE,
-        motorConfig
-    );
-
-    private final PivotConfig hoodConfig = new PivotConfig(motor)
-        .withStartingPosition(HoodConstants.STARTING_POS)
-        .withHardLimit(HoodConstants.MIN_ANGLE, HoodConstants.MAX_ANGLE)
-        .withSoftLimits(HoodConstants.MIN_ANGLE, HoodConstants.MAX_ANGLE)
-        .withMOI(HoodConstants.MOI_LENGTH, HoodConstants.MOI_MASS)
-        .withTelemetry("Hood", RobotConstants.GetTelemetry());
-
-    private final Pivot hood = new Pivot(hoodConfig);
+    private final MotionMagicTorqueCurrentFOC mmr = new MotionMagicTorqueCurrentFOC(HoodConstants.STARTING_POS);
 
     private Angle targetAngle = HoodConstants.STARTING_POS;
 
+    private final DoublePublisher anglePub = NetworkTableInstance.getDefault().getDoubleTopic("turret/angle").publish();
+    private final DoublePublisher targetPub = NetworkTableInstance.getDefault().getDoubleTopic("turret/target").publish();
+
     public Hood() {
-        setDefaultCommand(hood.setAngle(() -> this.targetAngle));
+        var c = new TalonFXConfiguration();
+
+        c.Slot0.withKP(HoodConstants.kP)
+               .withKI(HoodConstants.kI)
+               .withKD(HoodConstants.kD);
+
+        c.MotionMagic.withMotionMagicCruiseVelocity(HoodConstants.MM_VELOCITY)
+                     .withMotionMagicAcceleration(HoodConstants.MM_ACCELERATION)
+                     .withMotionMagicJerk(HoodConstants.JERK);
+
+        c.Feedback.withSensorToMechanismRatio(HoodConstants.GEAR_RATIO);
+
+        c.CurrentLimits.withStatorCurrentLimit(HoodConstants.STATOR_LIMIT)
+                       .withStatorCurrentLimitEnable(true)
+                       .withSupplyCurrentLimit(HoodConstants.SUPPLY_LIMIT)
+                       .withSupplyCurrentLimitEnable(true);
+
+        c.MotorOutput.withNeutralMode(NeutralModeValue.Brake);
+
+        c.SoftwareLimitSwitch.withForwardSoftLimitThreshold(HoodConstants.MAX_ANGLE)
+                             .withForwardSoftLimitEnable(true)
+                             .withReverseSoftLimitThreshold(HoodConstants.MIN_ANGLE)
+                             .withReverseSoftLimitEnable(true);
+
+        hoodMotor.getConfigurator().apply(c);
+        hoodMotor.setPosition(HoodConstants.STARTING_POS);
     }
 
     public void setTargetAngle(Angle angle) {
-        var a = Degrees.of(
+        var clamped = Degrees.of(
             MathUtil.clamp(
                 angle.in(Degrees),
                 HoodConstants.MIN_ANGLE.in(Degrees),
@@ -67,13 +62,12 @@ public class Hood extends SubsystemBase {
             )
         );
 
-        this.targetAngle = a;
-        hood.setAngle(a);
+        this.targetAngle = clamped;
+        hoodMotor.setControl(mmr.withPosition(clamped));
     }
 
     public void down() {
-        this.targetAngle = HoodConstants.MIN_ANGLE;
-        hood.setAngle(HoodConstants.MIN_ANGLE);
+        setTargetAngle(HoodConstants.MIN_ANGLE);
     }
 
     public Angle getTargetAngle() {
@@ -81,26 +75,21 @@ public class Hood extends SubsystemBase {
     }
 
     public Angle getCurrentAngle() {
-        return hood.getAngle();
+        return hoodMotor.getPosition().getValue();
     }
 
     public void zero() {
-        motor.setEncoderPosition(Degrees.zero());
+        hoodMotor.setPosition(0);
     }
 
     public boolean atPosition() {
-        return hood.isNear(targetAngle, HoodConstants.TOLERANCE).getAsBoolean();
+        return hoodMotor.getPosition().getValue()
+        .isNear(targetAngle, HoodConstants.TOLERANCE);
     }
 
     @Override
     public void periodic() {
-        hood.updateTelemetry();
-        SmartDashboard.putNumber("hood/desiredAngle", targetAngle.in(Degrees));
-        SmartDashboard.putNumber("hood/current", hood.getAngle().in(Degrees));
-    }
-
-    @Override
-    public void simulationPeriodic() {
-        hood.simIterate();
+        anglePub.set(hoodMotor.getPosition().getValue().in(Degrees));
+        targetPub.set(targetAngle.in(Degrees));
     }
 }

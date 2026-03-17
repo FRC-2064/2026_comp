@@ -10,7 +10,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.collectionSubsystem.CollectionConstants.IntakeRollerConstants;
 
 public class IntakeRollers extends SubsystemBase {
-    private final TalonFX rollerMotor = new TalonFX(IntakeRollerConstants.ROLLER_ID);
+    private final TalonFX rollerMotor = new TalonFX(IntakeRollerConstants.MOTOR_ID);
 
     private final DutyCycleOut rr = new DutyCycleOut(0).withEnableFOC(true);
 
@@ -30,11 +30,11 @@ public class IntakeRollers extends SubsystemBase {
 
 
     public void intake() {
-        rollerMotor.setControl(rr.withOutput(IntakeRollerConstants.INTAKE));
+        rollerMotor.setControl(rr.withOutput(IntakeRollerConstants.INTAKE_SPEED));
     }
 
     public void outtake() {
-        rollerMotor.setControl(rr.withOutput(IntakeRollerConstants.OUTTAKE));
+        rollerMotor.setControl(rr.withOutput(IntakeRollerConstants.OUTTAKE_SPEED));
     }
 
     public void stop() {

@@ -3,129 +3,103 @@ package frc.robot.subsystems.shooterSubsystem;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Rotations;
 
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.MotionMagicTorqueCurrentFOC;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.NeutralModeValue;
+
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.units.measure.Angle;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.shooterSubsystem.ShooterConstants.TurretConstants;
-import frc.robot.utils.RobotConstants;
-import yams.mechanisms.config.PivotConfig;
-import yams.mechanisms.positional.Pivot;
-import yams.motorcontrollers.SmartMotorController;
-import yams.motorcontrollers.SmartMotorControllerConfig;
-import yams.motorcontrollers.SmartMotorControllerConfig.ControlMode;
-import yams.motorcontrollers.SmartMotorControllerConfig.MotorMode;
-import yams.motorcontrollers.remote.TalonFXWrapper;
 import yams.units.EasyCRT;
 import yams.units.EasyCRTConfig;
 
 public class Turret extends SubsystemBase {
-
     private final TalonFX turretMotor = new TalonFX(TurretConstants.MOTOR_ID);
-    private final CANcoder throughBoreSmall = new CANcoder(
-        TurretConstants.ENCODER_13_ID
-    );
-    private final CANcoder throughBoreLarge = new CANcoder(
-        TurretConstants.ENCODER_14_ID
-    );
-
+    
+    private final CANcoder tbSmall = new CANcoder(TurretConstants.ENCODER_13_ID);
+    private final CANcoder tbBig = new CANcoder(TurretConstants.ENCODER_14_ID);
+    
     private final EasyCRTConfig easyCRTConfig = new EasyCRTConfig(
-        throughBoreSmall.getAbsolutePosition().asSupplier(),
-        throughBoreLarge.getAbsolutePosition().asSupplier()
+        tbSmall.getAbsolutePosition().asSupplier(),
+        tbBig.getAbsolutePosition().asSupplier()
     )
         .withCommonDriveGear(1.0, 80, 13, 14)
-        .withMechanismRange(
-            TurretConstants.MIN_ANGLE,
-            TurretConstants.MAX_ANGLE
-        )
-        .withAbsoluteEncoderOffsets(
-            TurretConstants.ENCODER_13_OFFSET,
-            TurretConstants.ENCODER_14_OFFSET
-        )
+        .withMechanismRange(TurretConstants.MIN_ANGLE, TurretConstants.MAX_ANGLE)
+        .withAbsoluteEncoderOffsets(TurretConstants.ENCODER_13_OFFSET, TurretConstants.ENCODER_14_OFFSET)
         .withMatchTolerance(Rotations.of(0.06))
         .withAbsoluteEncoderInversions(true, true);
-
+    
     private final EasyCRT solver = new EasyCRT(easyCRTConfig);
-
-    private final SmartMotorControllerConfig motorConfig =
-        new SmartMotorControllerConfig(this)
-            .withControlMode(ControlMode.CLOSED_LOOP)
-            .withClosedLoopController(
-                TurretConstants.kP,
-                TurretConstants.kI,
-                TurretConstants.kD,
-                TurretConstants.MAX_VEL,
-                TurretConstants.MAX_ACCEL
-            )
-            .withGearing(TurretConstants.GEARING)
-            .withIdleMode(MotorMode.BRAKE)
-            .withStatorCurrentLimit(TurretConstants.STATOR_LIMIT)
-            .withTelemetry("TurretMotor", RobotConstants.GetTelemetry());
-
-    private final SmartMotorController motor = new TalonFXWrapper(
-        turretMotor,
-        TurretConstants.MOTOR_TYPE,
-        motorConfig
-    );
-
-    private final PivotConfig turretConfig = new PivotConfig(motor)
-        .withStartingPosition(TurretConstants.STARTING_POS)
-        .withHardLimit(TurretConstants.MIN_ANGLE, TurretConstants.MAX_ANGLE)
-        .withSoftLimits(Degrees.of(0), Degrees.of(180))
-        .withTelemetry("Turret", RobotConstants.GetTelemetry())
-        .withMOI(TurretConstants.LENGTH, TurretConstants.WEIGHT);
-
-    private final Pivot turret = new Pivot(turretConfig);
-
-    private Angle targetAngle = Degrees.of(0);
-
+    
+    private final MotionMagicTorqueCurrentFOC mmr = new MotionMagicTorqueCurrentFOC(TurretConstants.STARTING_POS);
+    private Angle targetAngle = Degrees.zero();
+    
+    
     public Turret() {
-        var solver = new EasyCRT(easyCRTConfig);
-        solver
-            .getAngleOptional()
-            .ifPresent(mechAngle -> {
-                motor.setEncoderPosition(mechAngle);
-            });
-        setDefaultCommand(turret.setAngle(() -> this.targetAngle));
+        var c = new TalonFXConfiguration();
+        
+        c.Slot0.withKP(TurretConstants.kP)
+               .withKI(TurretConstants.kI)
+               .withKD(TurretConstants.kD)
+               .withKS(TurretConstants.kS);
+               
+        c.MotionMagic.withMotionMagicCruiseVelocity(TurretConstants.MM_VELOCITY)
+                     .withMotionMagicAcceleration(TurretConstants.MM_ACCELERATION);
+                     
+        c.Feedback.withSensorToMechanismRatio(TurretConstants.GEAR_RATIO);
+        
+        c.CurrentLimits.withStatorCurrentLimit(TurretConstants.STATOR_LIMIT)
+                       .withStatorCurrentLimitEnable(true)
+                       .withSupplyCurrentLimit(TurretConstants.SUPPLY_LIMIT)
+                       .withSupplyCurrentLimitEnable(true);
+                       
+        c.MotorOutput.withNeutralMode(NeutralModeValue.Brake);
+        
+        c.SoftwareLimitSwitch.withForwardSoftLimitThreshold(TurretConstants.MAX_ANGLE)
+                             .withForwardSoftLimitEnable(true)
+                             .withReverseSoftLimitThreshold(TurretConstants.MIN_ANGLE)
+                             .withForwardSoftLimitEnable(true);
+                             
+        turretMotor.getConfigurator().apply(c);
+        
+        solver.getAngleOptional().ifPresent(mechAngle -> {
+            turretMotor.setPosition(mechAngle);
+        });
     }
-
+    
     public void setTargetAngle(Angle angle) {
-        angle.plus(Degrees.of(90));
-        this.targetAngle = angle;
+        var clamped = Degrees.of(
+            MathUtil.clamp(
+                angle.in(Degrees), 
+                TurretConstants.MIN_ANGLE.in(Degrees),
+                TurretConstants.MAX_ANGLE.in(Degrees)
+            )
+        );
+        
+        this.targetAngle = clamped;
+        turretMotor.setControl(mmr.withPosition(clamped));
     }
-
+    
     public Angle getTargetAngle() {
         return targetAngle;
     }
-
+    
     public Angle getCurrentAngle() {
-        return turret.getAngle();
+        return turretMotor.getPosition().getValue();
     }
-
+    
     public boolean atPosition() {
-        return turret
-            .isNear(targetAngle, TurretConstants.TOLERANCE)
-            .getAsBoolean();
+        return turretMotor.getPosition().getValue()
+        .isNear(targetAngle, TurretConstants.TOLERANCE);
     }
-
+    
     public void zero() {
         turretMotor.setPosition(Degrees.zero());
     }
-
-    public void setEncoderZero(){
-        turretMotor.setPosition(0);
-    }
-
-    @Override
-    public void periodic() {
-        turret.updateTelemetry();
-        SmartDashboard.putNumber("turret/angle", turret.getAngle().in(Degrees));
-        SmartDashboard.putString("turret/status", solver.getLastStatus().toString());
-    }
-
-    @Override
-    public void simulationPeriodic() {
-        turret.simIterate();
-    }
+    
+    
+	
 }

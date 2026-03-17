@@ -26,10 +26,10 @@ public class Flywheel extends SubsystemBase {
         var c = new TalonFXConfiguration();
 
         c.Slot0
-        .withKP(FlyWheelConstants.P)
-        .withKI(FlyWheelConstants.I)
-        .withKD(FlyWheelConstants.D)
-        .withKS(FlyWheelConstants.S);
+        .withKP(FlyWheelConstants.kP)
+        .withKI(FlyWheelConstants.kI)
+        .withKD(FlyWheelConstants.kD)
+        .withKS(FlyWheelConstants.kS);
 
         c.CurrentLimits.withStatorCurrentLimit(FlyWheelConstants.STATOR_LIMIT)
         .withStatorCurrentLimitEnable(true)
