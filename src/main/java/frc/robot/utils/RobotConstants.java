@@ -11,21 +11,12 @@ import com.ctre.phoenix6.CANBus;
 
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Time;
-import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.generated.TunerConstants;
 import frc.robot.utils.ShooterCalc.ShooterSolution;
-import yams.motorcontrollers.SmartMotorControllerConfig.TelemetryVerbosity;
 
 public class RobotConstants {
 
     public static final CANBus CANIVORE = new CANBus("Comp");
-
-    public static TelemetryVerbosity GetTelemetry() {
-        if (RobotBase.isSimulation()) {
-            return TelemetryVerbosity.HIGH;
-        }
-        return TelemetryVerbosity.LOW;
-    }
 
     public static final double MAX_SPEED = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
     public static final double MAX_ROT = RotationsPerSecond.of(0.75).in(RadiansPerSecond);

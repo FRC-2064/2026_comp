@@ -5,7 +5,6 @@ import static edu.wpi.first.units.Units.RPM;
 
 import java.util.function.DoubleSupplier;
 
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -23,6 +22,7 @@ import frc.robot.utils.ShooterCalc;
 import frc.robot.utils.ShooterCalc.ShooterSolution;
 
 public class Superstructure extends SubsystemBase {
+    private static final double kTelemetryPeriodSeconds = 0.1;
 
     // ENUMS
 
@@ -73,6 +73,8 @@ public class Superstructure extends SubsystemBase {
     private ShooterMode shooterMode = ShooterMode.AUTO;
 
     private ShooterSolution manualSolution =  new ShooterSolution(Degrees.zero(), Degrees.zero(), RPM.zero());
+    private ShooterSolution cachedAutoSolution =
+        new ShooterSolution(Degrees.zero(), Degrees.zero(), RPM.zero());
     private boolean isReadyToShoot = false;
     private double speedMult = 1.0;
 
@@ -84,6 +86,7 @@ public class Superstructure extends SubsystemBase {
     // TIMERS
 
     private final Timer kickerClearTimer = new Timer();
+    private double lastTelemetryTimestamp = Double.NEGATIVE_INFINITY;
 
     // CONSTRUCTOR
 
@@ -111,10 +114,10 @@ public class Superstructure extends SubsystemBase {
     @Override
     public void periodic() {
         currentState = determineCurrentState();
-
-        SmartDashboard.putString("Superstructure/Turret/Mode", turretMode.name());
-
-        var sol = shooterCalc.getSelectedSolution();
+        var sol = shouldTrackAutoTarget() ? shooterCalc.getSelectedSolution() : cachedAutoSolution;
+        if (shouldTrackAutoTarget()) {
+            cachedAutoSolution = sol;
+        }
 
         updateTurret(sol);
         updateShooter(sol);
@@ -129,10 +132,17 @@ public class Superstructure extends SubsystemBase {
             turret.setTargetAngle(manualSolution.turretAngle());
             break;
             case AUTO:
-                turret.setTargetAngle(solution.turretAngle());
-                manualTurretSetpoint = solution.turretAngle();
+                if (shouldTrackAutoTarget()) {
+                    turret.setTargetAngle(solution.turretAngle());
+                    manualTurretSetpoint = solution.turretAngle();
+                }
                 break;
         }
+    }
+
+    private boolean shouldTrackAutoTarget() {
+        return turretMode == TurretMode.AUTO
+            && (desiredState == DesiredState.SHOOT || desiredState == DesiredState.SNOWBLOW);
     }
 
     // STATES
@@ -293,7 +303,7 @@ public class Superstructure extends SubsystemBase {
     }
 
     public ShooterSolution getCurrentSolution() {
-        return shooterCalc.getSelectedSolution();
+        return shouldTrackAutoTarget() ? cachedAutoSolution : manualSolution;
     }
 
     // SETTERS
@@ -341,6 +351,13 @@ public class Superstructure extends SubsystemBase {
     // TELEMETRY
 
     private void updateTelemetry() {
+        double now = Timer.getFPGATimestamp();
+        if (now - lastTelemetryTimestamp < kTelemetryPeriodSeconds) {
+            return;
+        }
+        lastTelemetryTimestamp = now;
+
+        SmartDashboard.putString("Superstructure/Turret/Mode", turretMode.name());
         SmartDashboard.putString("Superstructure/DesiredState", desiredState.name());
         SmartDashboard.putString("Superstructure/CurrentState", currentState.name());
         SmartDashboard.putBoolean("Superstructure/ReadyToShoot", isReadyToShoot());

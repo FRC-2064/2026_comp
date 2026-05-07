@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 public class HubShiftUtil {
+  private static final double TELEMETRY_PERIOD_SECONDS = 0.1;
   public enum ShiftEnum {
     TRANSITION,
     SHIFT1,
@@ -23,6 +24,7 @@ public class HubShiftUtil {
       ShiftEnum currentShift, double elapsedTime, double remainingTime, boolean active) {}
 
   private static Timer shiftTimer = new Timer();
+  private static double lastTelemetryTimestamp = Double.NEGATIVE_INFINITY;
   private static final ShiftEnum[] shiftsEnums = ShiftEnum.values();
 
   private static final double[] shiftStartTimes = {0.0, 10.0, 35.0, 60.0, 85.0, 110.0};
@@ -143,6 +145,12 @@ public class HubShiftUtil {
    * Call this in your Robot.java robotPeriodic() or a subsystem periodic() loop.
    */
   public static void updateDashboardTelemetry() {
+    double now = Timer.getFPGATimestamp();
+    if (now - lastTelemetryTimestamp < TELEMETRY_PERIOD_SECONDS) {
+      return;
+    }
+    lastTelemetryTimestamp = now;
+
     ShiftInfo currentShift = getOfficialShiftInfo();
 
     boolean isOurAllianceActive = currentShift.active();

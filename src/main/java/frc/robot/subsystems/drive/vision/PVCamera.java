@@ -53,8 +53,9 @@ public class PVCamera implements VisionCamera {
     public void periodic() {
         if (!enabled) return;
 
-        for (var result : camera.getAllUnreadResults()) {
-            processResult(result);
+        var unreadResults = camera.getAllUnreadResults();
+        if (!unreadResults.isEmpty()) {
+            processResult(unreadResults.get(unreadResults.size() - 1));
         }
     }
 

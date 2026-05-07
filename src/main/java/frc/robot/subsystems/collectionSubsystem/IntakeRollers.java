@@ -1,43 +1,36 @@
 package frc.robot.subsystems.collectionSubsystem;
 
-import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.controls.DutyCycleOut;
-import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.signals.InvertedValue;
-import com.ctre.phoenix6.signals.NeutralModeValue;
-
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.collectionSubsystem.CollectionConstants.IntakeRollerConstants;
+import org.littletonrobotics.junction.Logger;
 
 public class IntakeRollers extends SubsystemBase {
-    private final TalonFX rollerMotor = new TalonFX(IntakeRollerConstants.ROLLER_ID);
+    private final IntakeRollersIO io;
+    private final IntakeRollersIOInputsAutoLogged inputs =
+        new IntakeRollersIOInputsAutoLogged();
 
-    private final DutyCycleOut rr = new DutyCycleOut(0).withEnableFOC(true);
-
-    public IntakeRollers() {
-       var c = new TalonFXConfiguration();
-
-       c.CurrentLimits.withSupplyCurrentLimit(IntakeRollerConstants.SUPPLY_LIMIT)
-       .withStatorCurrentLimit(IntakeRollerConstants.STATOR_LIMIT)
-       .withStatorCurrentLimitEnable(true);
-
-       c.MotorOutput.withNeutralMode(NeutralModeValue.Coast)
-       .withInverted(InvertedValue.CounterClockwise_Positive);
-
-       rollerMotor.getConfigurator().apply(c);
+    public IntakeRollers(IntakeRollersIO io) {
+        this.io = io;
     }
 
-
-
     public void intake() {
-        rollerMotor.setControl(rr.withOutput(IntakeRollerConstants.INTAKE));
+        io.setOutput(IntakeRollerConstants.INTAKE);
+        Logger.recordOutput("IntakeRollers/TargetOutput", IntakeRollerConstants.INTAKE);
     }
 
     public void outtake() {
-        rollerMotor.setControl(rr.withOutput(IntakeRollerConstants.OUTTAKE));
+        io.setOutput(IntakeRollerConstants.OUTTAKE);
+        Logger.recordOutput("IntakeRollers/TargetOutput", IntakeRollerConstants.OUTTAKE);
     }
 
     public void stop() {
-        rollerMotor.setControl(rr.withOutput(0));
+        io.setOutput(0.0);
+        Logger.recordOutput("IntakeRollers/TargetOutput", 0.0);
+    }
+
+    @Override
+    public void periodic() {
+        io.updateInputs(inputs);
+        Logger.processInputs("IntakeRollers", inputs);
     }
 }

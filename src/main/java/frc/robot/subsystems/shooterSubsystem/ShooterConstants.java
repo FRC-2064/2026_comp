@@ -5,10 +5,7 @@ import static edu.wpi.first.units.Units.*;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
-import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.measure.*;
-import yams.gearing.GearBox;
-import yams.gearing.MechanismGearing;
 
 public class ShooterConstants {
 
@@ -40,14 +37,11 @@ public class ShooterConstants {
     public static class HoodConstants {
 
         public static final int MOTOR_ID = 31;
-        public static final DCMotor MOTOR_TYPE = DCMotor.getKrakenX44(1);
 
         public static final Distance MOI_LENGTH = Inches.of(6);
         public static final Mass MOI_MASS = Pounds.of(2);
 
-        public static final MechanismGearing GEARING = new MechanismGearing(
-            GearBox.fromReductionStages((24.0 / 12.0), (160.0 / 10.0))
-        );
+        public static final double GEAR_RATIO = (24.0 / 12.0) * (160.0 / 10.0);
         public static final Angle STARTING_POS = Degrees.of(0);
         public static final Angle MIN_ANGLE = Degrees.of(0);
         public static final Angle MAX_ANGLE = Degrees.of(19.5);
@@ -70,13 +64,10 @@ public class ShooterConstants {
         public static final int ENCODER_13_ID = 50;
         public static final int ENCODER_14_ID = 51;
         public static final int MOTOR_ID = 30;
-        public static final DCMotor MOTOR_TYPE = DCMotor.getKrakenX44(1);
 
         public static final Distance LENGTH = Inches.one();
         public static final Mass WEIGHT = Pounds.of(10);
-        public static final MechanismGearing GEARING = new MechanismGearing(
-            GearBox.fromReductionStages(32)
-        );
+        public static final double GEAR_RATIO = 32.0;
         public static final Angle STARTING_POS = Degrees.of(0);
         public static final Angle MIN_ANGLE = Degrees.of(-10);
         public static final Angle MAX_ANGLE = Degrees.of(200);
@@ -93,5 +84,10 @@ public class ShooterConstants {
 
         public static final Angle ENCODER_14_OFFSET = Rotations.of(-0.044);
         public static final Angle ENCODER_13_OFFSET = Rotations.of(-0.321);
+        public static final double ENCODER_13_RATIO = 80.0 / 13.0;
+        public static final double ENCODER_14_RATIO = 80.0 / 14.0;
+        public static final Angle ENCODER_MATCH_TOLERANCE = Rotations.of(0.06);
+        public static final boolean ENCODER_13_INVERTED = true;
+        public static final boolean ENCODER_14_INVERTED = true;
     }
 }
