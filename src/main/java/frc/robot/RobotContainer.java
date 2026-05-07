@@ -10,7 +10,6 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import frc.robot.commands.BasicCommands;
 import frc.robot.generated.TunerConstants;
-import frc.robot.subsystems.Superstructure;
 import frc.robot.subsystems.collectionSubsystem.Indexer;
 import frc.robot.subsystems.collectionSubsystem.IndexerIO;
 import frc.robot.subsystems.collectionSubsystem.IndexerIOReal;
@@ -31,6 +30,7 @@ import frc.robot.subsystems.shooterSubsystem.HoodIOReal;
 import frc.robot.subsystems.shooterSubsystem.Turret;
 import frc.robot.subsystems.shooterSubsystem.TurretIO;
 import frc.robot.subsystems.shooterSubsystem.TurretIOReal;
+import frc.robot.subsystems.superstructure.Superstructure;
 import frc.robot.utils.RobotConstants;
 import frc.robot.utils.ShooterCalc;
 
@@ -66,9 +66,7 @@ public class RobotContainer {
         hood,
         turret,
         flywheel,
-        calc,
-        vision,
-        () -> operatorXbox.getLeftX()
+        calc
     );
 
     private final BasicCommands bcmd = new BasicCommands(superstructure, drivetrain, driverXbox);
@@ -117,7 +115,7 @@ public class RobotContainer {
         ob.onTrue(bcmd.teleop.humanPlayer);
         oa.onTrue(bcmd.teleop.tower);
         olb.onTrue(bcmd.teleop.leftTrench);
-        orb.onTrue(bcmd.teleop.rigthTrench);
+        orb.onTrue(bcmd.teleop.rightTrench);
         ox.onTrue(bcmd.teleop.depot);
         oy.onTrue(bcmd.teleop.toggleTurretMode);
 

@@ -10,11 +10,10 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import frc.robot.subsystems.Superstructure;
-import frc.robot.subsystems.Superstructure.DesiredState;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
+import frc.robot.subsystems.superstructure.Superstructure;
+import frc.robot.subsystems.superstructure.SuperstructureEnums.Goal;
 import frc.robot.utils.RobotConstants;
-import frc.robot.utils.FieldConstants.LeftTrench;
 import frc.robot.utils.RobotConstants.ShooterSolutions;
 
 public class BasicCommands {
@@ -47,36 +46,36 @@ public class BasicCommands {
         // SUPERSTRUCTURE
 
         public final Command intake = new RunCommand(
-            () -> superstructure.setDesiredState(DesiredState.INTAKE),
+            () -> superstructure.setGoal(Goal.INTAKE),
             superstructure
         );
         public final Command snowblow = new RunCommand(
-            () -> superstructure.setDesiredState(DesiredState.SNOWBLOW),
+            () -> superstructure.setGoal(Goal.SNOWBLOW),
             superstructure
         );
         public final Command shoot = new RunCommand(
-            () -> superstructure.setDesiredState(DesiredState.SHOOT),
+            () -> superstructure.setGoal(Goal.SHOOT),
             superstructure
         );
         public final Command stow = new RunCommand(
-            () -> superstructure.setDesiredState(DesiredState.IDLE),
+            () -> superstructure.setGoal(Goal.IDLE),
             superstructure
         );
 
         public final Command setLeftTrench = new InstantCommand(
-            () -> superstructure.setManuelSol(ShooterSolutions.TRENCH_LEFT)
+            () -> superstructure.setManualSolution(ShooterSolutions.TRENCH_LEFT)
         );
 
         public final Command setRightTrench = new InstantCommand(
-            () -> superstructure.setManuelSol(ShooterSolutions.TRENCH_RIGHT)
+            () -> superstructure.setManualSolution(ShooterSolutions.TRENCH_RIGHT)
         );
 
         public final Command setDepot = new InstantCommand(
-            () -> superstructure.setManuelSol(ShooterSolutions.DEPOT)
+            () -> superstructure.setManualSolution(ShooterSolutions.DEPOT)
         );
 
         public final Command setTower = new InstantCommand(
-            () -> superstructure.setManuelSol(ShooterSolutions.TOWER)
+            () -> superstructure.setManualSolution(ShooterSolutions.TOWER)
         );
 
         public void registerAll() {
@@ -102,23 +101,23 @@ public class BasicCommands {
         // SUPERSTRUCTURE
 
         public final Command intake = new RunCommand(
-            () -> superstructure.setDesiredState(DesiredState.INTAKE),
+            () -> superstructure.setGoal(Goal.INTAKE),
             superstructure
         );
         public final Command snowblow = new RunCommand(
-            () -> superstructure.setDesiredState(DesiredState.SNOWBLOW),
+            () -> superstructure.setGoal(Goal.SNOWBLOW),
             superstructure
         );
         public final Command shoot = new RunCommand(
-            () -> superstructure.setDesiredState(DesiredState.SHOOT),
+            () -> superstructure.setGoal(Goal.SHOOT),
             superstructure
         );
         public final Command outtake = new RunCommand(
-            () -> superstructure.setDesiredState(DesiredState.OUTTAKE),
+            () -> superstructure.setGoal(Goal.OUTTAKE),
             superstructure
         );
         public final Command idle = new RunCommand(
-            () -> superstructure.setDesiredState(DesiredState.IDLE),
+            () -> superstructure.setGoal(Goal.IDLE),
             superstructure
         );
 
@@ -137,7 +136,7 @@ public class BasicCommands {
             superstructure::zeroTurret
         );
 
-        // MANUEL SHOOTER CONTROL
+        // MANUAL SHOOTER CONTROL
 
         public final Command toggleTurretMode = new InstantCommand(
             superstructure::toggleTurretMode
@@ -145,20 +144,20 @@ public class BasicCommands {
         public final Command toggleShooterMode = new InstantCommand(
             superstructure::toggleShooterMode
         );
-        public final Command rigthTrench = new InstantCommand(
-            () -> superstructure.setManuelSol(ShooterSolutions.TRENCH_RIGHT)
+        public final Command rightTrench = new InstantCommand(
+            () -> superstructure.setManualSolution(ShooterSolutions.TRENCH_RIGHT)
         );
         public final Command leftTrench = new InstantCommand(
-            () -> superstructure.setManuelSol(ShooterSolutions.TRENCH_LEFT)
+            () -> superstructure.setManualSolution(ShooterSolutions.TRENCH_LEFT)
         );
         public final Command tower = new InstantCommand(
-            () -> superstructure.setManuelSol(ShooterSolutions.TOWER)
+            () -> superstructure.setManualSolution(ShooterSolutions.TOWER)
         );
         public final Command depot = new InstantCommand(
-            () -> superstructure.setManuelSol(ShooterSolutions.DEPOT)
+            () -> superstructure.setManualSolution(ShooterSolutions.DEPOT)
         );
         public final Command humanPlayer = new InstantCommand(
-            () -> superstructure.setManuelSol(ShooterSolutions.HUMAN_PLAYER)
+            () -> superstructure.setManualSolution(ShooterSolutions.HUMAN_PLAYER)
         );
 
         // DRIVE
