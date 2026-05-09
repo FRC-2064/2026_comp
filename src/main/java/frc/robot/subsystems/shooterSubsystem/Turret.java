@@ -1,98 +1,34 @@
 package frc.robot.subsystems.shooterSubsystem;
 
 import static edu.wpi.first.units.Units.Degrees;
-import static edu.wpi.first.units.Units.Rotations;
 
-import com.ctre.phoenix6.hardware.CANcoder;
-import com.ctre.phoenix6.hardware.TalonFX;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.shooterSubsystem.ShooterConstants.TurretConstants;
-import frc.robot.utils.RobotConstants;
-import yams.mechanisms.config.PivotConfig;
-import yams.mechanisms.positional.Pivot;
-import yams.motorcontrollers.SmartMotorController;
-import yams.motorcontrollers.SmartMotorControllerConfig;
-import yams.motorcontrollers.SmartMotorControllerConfig.ControlMode;
-import yams.motorcontrollers.SmartMotorControllerConfig.MotorMode;
-import yams.motorcontrollers.remote.TalonFXWrapper;
-import yams.units.EasyCRT;
-import yams.units.EasyCRTConfig;
+import org.littletonrobotics.junction.Logger;
 
 public class Turret extends SubsystemBase {
+    private final TurretIO io;
+    private final TurretIOInputsAutoLogged inputs = new TurretIOInputsAutoLogged();
 
-    private final TalonFX turretMotor = new TalonFX(TurretConstants.MOTOR_ID);
-    private final CANcoder throughBoreSmall = new CANcoder(
-        TurretConstants.ENCODER_13_ID
-    );
-    private final CANcoder throughBoreLarge = new CANcoder(
-        TurretConstants.ENCODER_14_ID
-    );
+    private Angle targetAngle = TurretConstants.STARTING_POS;
 
-    private final EasyCRTConfig easyCRTConfig = new EasyCRTConfig(
-        throughBoreSmall.getAbsolutePosition().asSupplier(),
-        throughBoreLarge.getAbsolutePosition().asSupplier()
-    )
-        .withCommonDriveGear(1.0, 80, 13, 14)
-        .withMechanismRange(
-            TurretConstants.MIN_ANGLE,
-            TurretConstants.MAX_ANGLE
-        )
-        .withAbsoluteEncoderOffsets(
-            TurretConstants.ENCODER_13_OFFSET,
-            TurretConstants.ENCODER_14_OFFSET
-        )
-        .withMatchTolerance(Rotations.of(0.06))
-        .withAbsoluteEncoderInversions(true, true);
-
-    private final EasyCRT solver = new EasyCRT(easyCRTConfig);
-
-    private final SmartMotorControllerConfig motorConfig =
-        new SmartMotorControllerConfig(this)
-            .withControlMode(ControlMode.CLOSED_LOOP)
-            .withClosedLoopController(
-                TurretConstants.kP,
-                TurretConstants.kI,
-                TurretConstants.kD,
-                TurretConstants.MAX_VEL,
-                TurretConstants.MAX_ACCEL
-            )
-            .withGearing(TurretConstants.GEARING)
-            .withIdleMode(MotorMode.BRAKE)
-            .withStatorCurrentLimit(TurretConstants.STATOR_LIMIT)
-            .withTelemetry("TurretMotor", RobotConstants.GetTelemetry());
-
-    private final SmartMotorController motor = new TalonFXWrapper(
-        turretMotor,
-        TurretConstants.MOTOR_TYPE,
-        motorConfig
-    );
-
-    private final PivotConfig turretConfig = new PivotConfig(motor)
-        .withStartingPosition(TurretConstants.STARTING_POS)
-        .withHardLimit(TurretConstants.MIN_ANGLE, TurretConstants.MAX_ANGLE)
-        .withSoftLimits(Degrees.of(0), Degrees.of(180))
-        .withTelemetry("Turret", RobotConstants.GetTelemetry())
-        .withMOI(TurretConstants.LENGTH, TurretConstants.WEIGHT);
-
-    private final Pivot turret = new Pivot(turretConfig);
-
-    private Angle targetAngle = Degrees.of(0);
-
-    public Turret() {
-        var solver = new EasyCRT(easyCRTConfig);
-        solver
-            .getAngleOptional()
-            .ifPresent(mechAngle -> {
-                motor.setEncoderPosition(mechAngle);
-            });
-        setDefaultCommand(turret.setAngle(() -> this.targetAngle));
+    public Turret(TurretIO io) {
+        this.io = io;
+        setTargetAngle(TurretConstants.STARTING_POS);
     }
 
     public void setTargetAngle(Angle angle) {
-        angle.plus(Degrees.of(90));
-        this.targetAngle = angle;
+        targetAngle = Degrees.of(
+            MathUtil.clamp(
+                angle.in(Degrees),
+                TurretConstants.MIN_ANGLE.in(Degrees),
+                TurretConstants.MAX_ANGLE.in(Degrees)
+            )
+        );
+        io.setTargetAngle(targetAngle);
     }
 
     public Angle getTargetAngle() {
@@ -100,32 +36,28 @@ public class Turret extends SubsystemBase {
     }
 
     public Angle getCurrentAngle() {
-        return turret.getAngle();
+        return Degrees.of(inputs.positionDeg);
     }
 
     public boolean atPosition() {
-        return turret
-            .isNear(targetAngle, TurretConstants.TOLERANCE)
-            .getAsBoolean();
+        return getCurrentAngle().isNear(targetAngle, TurretConstants.TOLERANCE);
     }
 
     public void zero() {
-        turretMotor.setPosition(Degrees.zero());
+        io.zeroPosition();
     }
 
-    public void setEncoderZero(){
-        turretMotor.setPosition(0);
+    public void setEncoderZero() {
+        zero();
     }
 
     @Override
     public void periodic() {
-        turret.updateTelemetry();
-        SmartDashboard.putNumber("turret/angle", turret.getAngle().in(Degrees));
-        SmartDashboard.putString("turret/status", solver.getLastStatus().toString());
-    }
+        io.updateInputs(inputs);
+        Logger.processInputs("Turret", inputs);
+        Logger.recordOutput("Turret/TargetAngleDeg", targetAngle.in(Degrees));
 
-    @Override
-    public void simulationPeriodic() {
-        turret.simIterate();
+        SmartDashboard.putNumber("turret/angle", inputs.positionDeg);
+        SmartDashboard.putString("turret/status", inputs.absoluteSolveStatus);
     }
 }
